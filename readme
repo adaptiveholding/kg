@@ -1,0 +1,28 @@
+# Parcel Optimization
+
+Tooling for a UPS/FedEx parcel rate negotiation and gain-share business — analyzing carrier agreements and invoices to find negotiation opportunities, then verifying and invoicing on realized savings.
+
+## Status
+
+Early-stage. Repo created ahead of any code — structure and scope are still being defined.
+
+## Background
+
+Small and mid-size shippers ($200k–$2M in annual parcel spend) are typically underserved by enterprise-focused parcel audit platforms and too complex to self-serve on free tools. This project explores automating the recurring, mechanical parts of that engagement — lead research, savings verification, and invoicing — while keeping the negotiation itself expertise-driven.
+
+## Planned Components
+
+- **Lead research** — identify and enrich candidate shippers in the target spend band
+- **Baseline capture** — structured representation of a client's existing carrier agreement (discounts, accessorials, minimums, tier thresholds)
+- **Savings verification** — reprice weekly carrier invoices against the baseline to calculate realized savings
+- **Invoicing** — generate gain-share invoices with line-item backup
+
+## Stack (tentative)
+
+- n8n for scheduled/recurring workflows
+- Google Sheets/Airtable for interim data storage
+- Claude for judgment-heavy research and analysis steps
+
+## Notes
+
+Scope and architecture are not final. This README will be updated as the project takes shape.
