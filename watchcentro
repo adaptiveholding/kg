@@ -1,0 +1,708 @@
+{
+  "name": "Watch Centro",
+  "nodes": [
+    {
+      "id": "e38010b3-da92-4fdc-b71a-0e702acf10d3",
+      "name": "Webhook: raw digest",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "watch-market-digest",
+        "responseMode": "responseNode",
+        "options": {},
+        "authentication": "headerAuth"
+      },
+      "webhookId": "7f57f2f9-870a-429a-9787-cb66453c2fea",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "mQ2IMyL4tDvDNgZp",
+          "name": "Watch Centro Webhook"
+        }
+      }
+    },
+    {
+      "id": "0133d6e3-e970-4375-8c0f-a68edff52190",
+      "name": "Normalize input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Normalize the webhook payload. Accepts the agreed JSON shape, plain JSON {digest}, or a plain text body.\nconst raw = $input.first().json;\nconst b = raw.body ?? raw;\nlet digest = '';\nif (typeof b === 'string') digest = b;\nelse if (b && typeof b.digest === 'string') digest = b.digest;\nelse if (b && typeof b.text === 'string') digest = b.text;\nelse digest = JSON.stringify(b);\ndigest = digest.trim();\nconst f = (typeof b === 'object' && b) ? b : {};\n\n// Window: explicit field first, otherwise detect from the digest's \"Window:\" line, otherwise 24h.\nlet windowKey = String(f.window || '').toLowerCase().trim();\nif (!['24h', '7d', '30d', '90d', 'custom'].includes(windowKey)) {\n  const line = (digest.match(/^\\s*window:.*$/im) || [''])[0].toLowerCase();\n  if (/90\\s*d|90-day|90 day|quarter/.test(line)) windowKey = '90d';\n  else if (/30\\s*d|30-day|30 day|month/.test(line)) windowKey = '30d';\n  else if (/7\\s*d|7-day|7 day|week/.test(line)) windowKey = '7d';\n  else windowKey = '24h';\n}\nconst LABELS = { '24h': 'Daily', '7d': 'Weekly', '30d': 'Monthly', '90d': 'Quarterly', 'custom': 'Special' };\nconst WORDS = { '24h': [450, 800], '7d': [700, 1100], '30d': [900, 1400], '90d': [900, 1400], 'custom': [600, 1200] };\n\nconst runType = f.run_type === 'cron' ? 'cron' : (f.run_type === 'adhoc' ? 'adhoc' : 'unspecified');\nlet mode = f.mode === 'live' || f.mode === 'test' ? f.mode : (runType === 'adhoc' ? 'test' : 'live');\n\nconst today = new Date().toISOString().slice(0, 10);\nconst runId = String(f.run_id || (today + '-' + windowKey));\n\n// Duplicate protection for live runs. Run ids are recorded only after a draft is created.\nconst store = $getWorkflowStaticData('global');\nconst seen = store.liveRunIds || {};\nconst duplicate = mode === 'live' && Object.prototype.hasOwnProperty.call(seen, runId);\n\nreturn [{ json: {\n  raw_digest: digest,\n  run_date: today,\n  window: windowKey,\n  window_label: LABELS[windowKey],\n  word_min: WORDS[windowKey][0],\n  word_max: WORDS[windowKey][1],\n  period_start: f.period_start || null,\n  period_end: f.period_end || null,\n  run_type: runType,\n  mode,\n  run_id: runId,\n  digest_format_version: String(f.digest_format_version || '1'),\n  duplicate,\n  ok: !duplicate,\n  stage: duplicate ? 'duplicate' : null,\n  reason: duplicate ? ('A live draft was already created for run_id ' + runId) : null\n} }];"
+      }
+    },
+    {
+      "id": "b3b98641-10fc-4494-9d4a-ee823609071c",
+      "name": "Anthropic: sanitizer model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        440,
+        520
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "Fy3gBIA4bOXd96pw",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "cb479020-0af1-46f3-bf4e-0d34eb3ec273",
+      "name": "Sanitizer (LLM)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sanitizer. You read a raw daily digest of activity in private watch buying and selling communities and extract ONLY aggregate, non-identifying facts into a fixed JSON schema. Nothing outside the schema may pass through.\n\nHARD RULES\n- Never output a group name, group nickname, or any description that could identify a group (for example a group's price tier combined with a region).\n- Never output usernames, handles, quotes, links, URLs, post counts per group, or the number of groups.\n- Never output an individual listing. A listing is any combination of specific model/reference plus a specific asking price, or plus a seller, city or region.\n- Theft or fraud alerts: never include the city, owner, reference number, reward amount, or link. Describe at the pattern level only and set the flag fields.\n- This digest covers a {{ $json.window_label }} window ({{ $json.window }}). Only describe direction or change over time (rising, falling, growing, consistently, increasingly) when the digest explicitly compares this period to an earlier one with stated figures or a stated direction. Then set direction to \"rising\", \"falling\" or \"steady\" and record the comparison in \"comparisons\". Otherwise set direction to \"not enough data\".\n- Rank by what the digest reports for this window only. Counts are approximate because brand detection is imperfect, so output rank order, not numbers.\n- Record how broad each signal is, literally. One example is \"single example\", two is \"a couple of posts\". Use \"several posts\" only for three or more, and \"widespread\" only when the digest says it appears across groups or in large numbers. A recurring post format counts as one example unless the digest says how many. Do not turn one example into a pattern.\n- Price range: give only the lowest and highest asks the digest reports, rounded and in words (for example \"a few hundred dollars\" and \"well into six figures\"). Do not invent middle tiers or boundaries the digest does not state.\n- If a field is not supported by the digest, output null or an empty array. Do not invent.\n\nOUTPUT: return ONLY valid JSON with exactly this shape, no prose, no code fences.\n{\n  \"data_window\": \"human readable date range, e.g. October 7 to 8, 2026\",\n  \"window\": \"{{ $json.window }}\",\n  \"comparison_available\": false,\n  \"comparisons\": [ { \"subject\": \"model, brand or signal\", \"this_period\": \"value in words\", \"previous_period\": \"value in words\", \"direction\": \"rising | falling | steady\" } ],\n  \"activity_level\": \"low | moderate | high | very high, only if the digest characterizes it\",\n  \"sales_share\": \"approximate share of posts that are sales or trades, in words, only if stated\",\n  \"top_models\": [ { \"rank\": 1, \"name\": \"model family\", \"brand\": \"brand\", \"mention_level\": \"leading | high | moderate (relative to other models in this window)\", \"direction\": \"rising | falling | steady | not enough data\" } ],\n  \"wanted_to_buy\": [ \"generic model names people are asking for\" ],\n  \"wanted_to_buy_breadth\": \"single example | a couple of posts | several posts | widespread\",\n  \"price_range\": { \"lowest\": \"rounded, in words\", \"highest\": \"rounded, in words\" },\n  \"market_signals\": [ { \"signal\": \"one generic sentence\", \"breadth\": \"single example | a couple of posts | several posts | widespread\" } ],\n  \"top_theme\": \"the single strongest pattern of the day in one generic sentence\",\n  \"trust_and_safety\": {\n    \"theft_or_fraud_alert_present\": true,\n    \"detail_level_allowed\": 1,\n    \"publicly_sourced\": false,\n    \"generic_description\": \"pattern-level description\",\n    \"other_themes\": [ { \"theme\": \"generic sentence\", \"breadth\": \"single example | a couple of posts | several posts | widespread\" } ]\n  },\n  \"data_quality_notes\": [ \"generic observations about the limits of the data\" ]\n}\n\nRAW DIGEST:\n{{ $json.raw_digest }}",
+        "batching": {}
+      }
+    },
+    {
+      "id": "8a0202a9-5cd2-4bd1-b1bf-02d79e6ed2dc",
+      "name": "Parse + code checks (sanitizer)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Parse sanitizer JSON and run hard code checks that do not depend on any model.\nconst raw = $('Normalize input').first().json;\nlet text = $input.first().json.text ?? $input.first().json.output ?? '';\ntext = String(text).replace(/^```(?:json)?/m, '').replace(/```\\s*$/m, '').trim();\n\nlet clean;\ntry { clean = JSON.parse(text); }\ncatch (e) { return [{ json: { ok: false, stage: 'sanitizer', reason: 'Sanitizer did not return valid JSON', text } }]; }\n\n// CONFIG: complete this list with every group name and common nickname you monitor.\nconst GROUP_NAMES = [\n  'TWAT', 'Watch Trader Community', 'Tuscanyrose', 'Tuscany Rose', 'Moda Watch Club', 'Moda'\n];\n\nconst flat = JSON.stringify(clean);\nconst problems = [];\n\nfor (const g of GROUP_NAMES) {\n  const re = new RegExp('\\\\b' + g.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '\\\\b', 'i');\n  if (re.test(flat)) problems.push('group name present: ' + g);\n}\nif (/https?:\\/\\/|www\\./i.test(flat)) problems.push('URL present');\nif (/(^|[\\s(])@[A-Za-z0-9_.]{3,}/.test(flat)) problems.push('handle present');\n// Dollar amounts: none allowed outside price_tiers. Inside price_tiers only round tier boundaries are allowed.\nconst tiers = clean.price_range || {};\nconst noTiers = JSON.stringify(Object.assign({}, clean, { price_range: null }));\nif (/\\$\\s?\\d/.test(noTiers)) problems.push('dollar amount outside price range');\nconst amountRe = /\\$\\s?(\\d[\\d,]*(?:\\.\\d+)?)\\s*(k|K)?/g;\nconst tierText = JSON.stringify(tiers);\nlet m;\nwhile ((m = amountRe.exec(tierText)) !== null) {\n  let v = parseFloat(m[1].replace(/,/g, ''));\n  if (m[2]) v = v * 1000;\n  const round = v >= 10000 ? v % 10000 === 0 : (v >= 1000 ? v % 1000 === 0 : v % 100 === 0);\n  if (!round) problems.push('non-round price amount: ' + m[0]);\n}\nif (/\\b(miami|hong kong)\\b/i.test(flat)) problems.push('specific location present');\nif (/\\b\\d{5,6}[A-Z]{0,2}\\b/.test(flat)) problems.push('reference-number-like token present');\nif (/\\b\\d+\\s+(posts|groups)\\b/i.test(flat)) problems.push('post or group count present');\n\n// Clamp the theft detail level: 1 = pattern only, 2 = generic case, 3 = only if publicly sourced.\nconst ts = clean.trust_and_safety || {};\nlet level = Number(ts.detail_level_allowed) || 1;\nif (level === 3 && ts.publicly_sourced !== true) level = 2;\nif (level > 3) level = 3;\nts.detail_level_allowed = level;\nclean.trust_and_safety = ts;\n\nif (problems.length) {\n  return [{ json: { ok: false, stage: 'sanitizer', reason: problems.join('; '), sanitized: clean, run_date: raw.run_date } }];\n}\nreturn [{ json: { ok: true, sanitized: clean, run_date: raw.run_date } }];"
+      }
+    },
+    {
+      "id": "49935f4a-65b8-4924-8c67-bcfc0b798842",
+      "name": "Sanitizer passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1020,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7a46606b-7ef9-4c8a-b6db-acec567aa25c",
+      "name": "Anthropic: writer model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1240,
+        520
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 8000
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "Fy3gBIA4bOXd96pw",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "c742380f-965c-4e78-a06c-468b236f3887",
+      "name": "Writer (LLM)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1240,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=# Role\nYou write the daily Watch Market Report for watchcentro.com. Readers are people who buy and sell pre-owned watches. The byline is \"Watch Centro\". Never invent an author.\n\n# Input\nYou receive ONLY sanitized, aggregate facts in JSON. You never see the underlying communities, posts or people. Treat the JSON as the complete set of facts. If it does not support a point, leave the point out.\n\n# Hard rules\n1. Never name, hint at, or describe any group or community in an identifying way. Say \"a number of active groups\" or \"the communities\".\n2. Do not state how many groups were monitored.\n3. No usernames, quotes, links or screenshots.\n4. No individual listings. Use the price tiers and rankings as given.\n5. Theft and fraud: trust_and_safety.detail_level_allowed is 1 (pattern only) or 2 (generic case with no place, owner, reference number or reward). Never go beyond the level given. Do not imply anyone is guilty of anything.\n6. Present counts as approximate and sentiment as interpretation, never as market data or prices.\n7. Use only numbers and dollar figures that appear verbatim in the sanitized facts. Never add, estimate or extend a figure.\n8. This is a {{ $json.window_label }} report covering {{ $json.sanitized.data_window }}. Describe change over time only where the facts include a comparison or a direction other than \"not enough data\", and only in the direction stated. Without a comparison, describe what traders did in this period, in the past tense.\n9. Respect breadth literally. A \"single example\" or \"a couple of posts\" must be described with those words (one post, two posts) or left out, never generalized. Only \"several posts\" or \"widespread\" signals can be described as common.\n10. Never extend the facts with your own reasoning about causes, implications, motives, community character or negotiating room. No editorial lines such as \"a reminder that\" or \"traders look out for one another\". If it is not in the facts, it is not in the post.\n11. Add one practical, generic safety tip for buyers or sellers in the trust and safety section.\n\n# Style\nPlain, direct prose. No hype, no sales language, no exclamation marks, no emoji, no em dashes. Paragraphs of 2 to 4 sentences. Attribute observations to \"traders\" or \"the communities\". {{ $('Normalize input').first().json.word_min }} to {{ $('Normalize input').first().json.word_max }} words in total. A thin period gets a shorter post; never pad. Vary the opening sentence structure from day to day.\n\n# Output\nReturn ONLY valid JSON, no prose, no code fences:\n{\n  \"headline_topic\": \"3 to 6 words naming the specific topic of the day\",\n  \"title\": \"{{ $('Normalize input').first().json.window_label === 'Daily' ? 'Watch Market Report' : $('Normalize input').first().json.window_label + ' Watch Market Report' }}: [headline topic]. Keep the whole title to 65 characters or fewer.\",\n  \"slug\": \"watch-market-report-{{ $('Normalize input').first().json.window }}-{{ $json.run_date }}-short-topic\",\n  \"excerpt\": \"1 to 2 sentences\",\n  \"seo_title\": \"60 characters or fewer, includes the topic\",\n  \"meta_description\": \"140 to 155 characters, one sentence, includes 'watch market report'\",\n  \"focus_keyphrase\": \"short specific phrase\",\n  \"summary\": \"2 to 3 sentence opening summary\",\n  \"takeaway\": \"1 to 3 short sentences for the key takeaway box\",\n  \"glance\": [ { \"label\": \"Activity\", \"value\": \"1 to 3 words\" }, { \"label\": \"Most mentioned\", \"value\": \"1 to 3 words\" }, { \"label\": \"Mood\", \"value\": \"1 to 3 words\" } ],\n  \"sections\": [ { \"heading\": \"descriptive H2\", \"paragraphs\": [ \"...\", \"...\" ] } ],\n  \"table\": { \"caption\": \"Most mentioned models in this window\", \"headers\": [ \"Rank\", \"Model\", \"Brand\", \"Mentions\" ], \"rows\": [ [ \"1\", \"...\", \"...\", \"Leading\" ] ] },\n  \"closing\": \"one short closing paragraph\"\n}\nUse 3 to 5 sections. The table must have 4 columns or fewer and 8 rows or fewer, with text labels rather than symbols.\n\n# Sanitized facts\n{{ JSON.stringify($json.sanitized, null, 2) }}",
+        "batching": {}
+      }
+    },
+    {
+      "id": "48e58f14-ed6d-4f4f-9b80-2e2e1e9099d2",
+      "name": "Parse writer output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const prev = $('Parse + code checks (sanitizer)').first().json;\nlet text = $input.first().json.text ?? $input.first().json.output ?? '';\ntext = String(text).replace(/^```(?:json)?/m, '').replace(/```\\s*$/m, '').trim();\nconst a = text.indexOf('{'), b = text.lastIndexOf('}');\nif (a >= 0 && b > a) text = text.slice(a, b + 1);\nlet post;\ntry { post = JSON.parse(text); }\ncatch (e) { return [{ json: { ok: false, stage: 'writer', reason: 'Writer did not return valid JSON (possibly truncated)', post: {}, word_count: 0, sanitized: prev.sanitized, run_date: prev.run_date } }]; }\n\nconst words = [post.summary, post.takeaway, post.closing, ...(post.sections || []).flatMap(s => s.paragraphs || [])].join(' ').split(/\\s+/).filter(Boolean).length;\n\nreturn [{ json: { ok: true, post, word_count: words, sanitized: prev.sanitized, run_date: prev.run_date } }];"
+      }
+    },
+    {
+      "id": "fe371ce3-3fb5-49a0-810f-675479dc6f30",
+      "name": "Anthropic: reviewer model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1820,
+        520
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 4000
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "Fy3gBIA4bOXd96pw",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "id": "56f227fc-6c26-4cf8-8b1d-3571d5f9635f",
+      "name": "Reviewer (LLM)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1820,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a privacy and accuracy reviewer for a blog post about the pre-owned watch market. You see the RAW source digest (which contains identifying details) and the DRAFT post. Your only job is to decide whether the draft is safe to publish.\n\nFAIL the draft if any of these are true:\n- It names, nicknames, or identifiably describes any group or community from the raw digest.\n- It states or implies how many groups were monitored.\n- It contains a username, handle, quote, link or URL.\n- It describes an individual listing: a specific model or reference combined with a specific price, seller, city or region.\n- It includes theft or fraud details beyond the pattern level: city, owner, reference number, reward amount, or anything implying a named person's guilt.\n- It presents a count, price or value as exact or as market data rather than as approximate community sentiment.\n- It makes a claim the raw digest does not support. This is a {{ $('Normalize input').first().json.window_label }} report ({{ $('Normalize input').first().json.window }}). Trend or direction claims are acceptable only where the raw digest states a comparison with an earlier period supporting that direction.\n- It uses em dashes, exclamation marks or emoji.\n\nReturn ONLY valid JSON, no prose, no code fences:\n{ \"pass\": true, \"problems\": [ \"specific problem with the offending phrase quoted\" ] }\n\nRAW DIGEST:\n{{ $('Normalize input').first().json.raw_digest }}\n\nDRAFT POST (JSON):\n{{ JSON.stringify($json.post, null, 2) }}",
+        "batching": {}
+      }
+    },
+    {
+      "id": "9e39999c-9ea5-4374-9e46-fa8f048fa9f1",
+      "name": "Parse review + code checks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2180,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const prev = $('Parse writer output').first().json;\nlet text = $input.first().json.text ?? $input.first().json.output ?? '';\ntext = String(text).replace(/^```(?:json)?/m, '').replace(/```\\s*$/m, '').trim();\nlet review;\ntry { review = JSON.parse(text); }\ncatch (e) { review = { pass: false, problems: ['Reviewer did not return valid JSON: ' + text.slice(0, 200)] }; }\n\n// Same code checks as the sanitizer stage, run on the final post text.\nconst GROUP_NAMES = [\n  'TWAT', 'Watch Trader Community', 'Tuscanyrose', 'Tuscany Rose', 'Moda Watch Club', 'Moda'\n];\nconst flat = JSON.stringify(prev.post);\nconst problems = [...(review.problems || [])];\nfor (const g of GROUP_NAMES) {\n  const re = new RegExp('\\\\b' + g.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '\\\\b', 'i');\n  if (re.test(flat)) problems.push('code check: group name present: ' + g);\n}\nif (/https?:\\/\\/|www\\./i.test(flat)) problems.push('code check: URL present');\nif (/(^|[\\s(])@[A-Za-z0-9_.]{3,}/.test(flat)) problems.push('code check: handle present');\nif (/\\u2014/.test(flat)) problems.push('code check: em dash present');\nif (prev.ok === false) problems.push('writer output invalid: ' + (prev.reason || ''));\nconst factsText = JSON.stringify(prev.sanitized || {}).toLowerCase();\nconst dollars = flat.match(/\\$\\s?\\d[\\d,]*(?:\\.\\d+)?\\s*(?:k|K|m|M)?/g) || [];\nfor (const d of dollars) {\n  const norm = d.toLowerCase().replace(/\\s/g, '');\n  if (!factsText.replace(/\\s/g, '').includes(norm)) problems.push('code check: dollar figure not in sanitized facts: ' + d);\n}\nif (/[\\u{1F300}-\\u{1FAFF}]/u.test(flat)) problems.push('code check: emoji present');\nconst meta = $('Normalize input').first().json;\nif (prev.word_count < meta.word_min - 150 || prev.word_count > meta.word_max + 200) problems.push('code check: word count out of range: ' + prev.word_count);\n\nconst ok = review.pass === true && problems.length === 0;\nreturn [{ json: { ok, stage: 'reviewer', reason: problems.join('; '), post: prev.post, word_count: prev.word_count, run_date: prev.run_date } }];"
+      }
+    },
+    {
+      "id": "1b23aeb4-fa93-47c0-aba6-e79e5ecff70c",
+      "name": "Review passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2400,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f47a92a9-eddc-4b62-ae77-be6343e4d3be",
+      "name": "Render WP blocks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2620,
+        200
+      ],
+      "parameters": {
+        "jsCode": "// Render the writer JSON into WordPress block markup using fixed templates.\nconst p = $input.first().json.post;\nconst esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst para = t => `<!-- wp:paragraph -->\\n<p>${esc(t)}</p>\\n<!-- /wp:paragraph -->\\n\\n`;\nconst h2 = t => `<!-- wp:heading -->\\n<h2 class=\"wp-block-heading\">${esc(t)}</h2>\\n<!-- /wp:heading -->\\n\\n`;\nconst sep = () => `<!-- wp:separator {\"className\":\"is-style-wide\"} -->\\n<hr class=\"wp-block-separator has-alpha-channel-opacity is-style-wide\"/>\\n<!-- /wp:separator -->\\n\\n`;\n\nlet html = '';\nconst window = $input.first().json.sanitized?.data_window || $('Parse + code checks (sanitizer)').first().json.sanitized.data_window;\nhtml += para(p.summary);\nhtml += `<!-- wp:paragraph {\"fontSize\":\"small\"} -->\\n<p class=\"has-small-font-size\">Based on activity from ${esc(window)}.</p>\\n<!-- /wp:paragraph -->\\n\\n`;\n\n// Key takeaway box\nhtml += `<!-- wp:group {\"style\":{\"spacing\":{\"padding\":{\"top\":\"1.25em\",\"bottom\":\"1.25em\",\"left\":\"1.5em\",\"right\":\"1.5em\"}}},\"backgroundColor\":\"base-2\",\"layout\":{\"type\":\"constrained\"}} -->\\n<div class=\"wp-block-group has-base-2-background-color has-background\" style=\"padding-top:1.25em;padding-right:1.5em;padding-bottom:1.25em;padding-left:1.5em\"><!-- wp:paragraph -->\\n<p><strong>Key takeaway:</strong> ${esc(p.takeaway)}</p>\\n<!-- /wp:paragraph --></div>\\n<!-- /wp:group -->\\n\\n`;\n\n// At-a-glance row\nif (Array.isArray(p.glance) && p.glance.length) {\n  html += `<!-- wp:columns -->\\n<div class=\"wp-block-columns\">`;\n  for (const g of p.glance.slice(0, 3)) {\n    html += `<!-- wp:column -->\\n<div class=\"wp-block-column\"><!-- wp:paragraph -->\\n<p><strong>${esc(g.label)}</strong><br>${esc(g.value)}</p>\\n<!-- /wp:paragraph --></div>\\n<!-- /wp:column -->`;\n  }\n  html += `</div>\\n<!-- /wp:columns -->\\n\\n`;\n}\n\nconst sections = Array.isArray(p.sections) ? p.sections : [];\nsections.forEach((s, i) => {\n  html += h2(s.heading);\n  for (const t of (s.paragraphs || [])) html += para(t);\n  // Put the table after the first section\n  if (i === 0 && p.table && Array.isArray(p.table.rows) && p.table.rows.length) {\n    const headers = (p.table.headers || []).slice(0, 4);\n    const rows = p.table.rows.slice(0, 8);\n    html += `<!-- wp:table {\"className\":\"is-style-stripes\"} -->\\n<figure class=\"wp-block-table is-style-stripes\"><table><thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.slice(0, 4).map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>${p.table.caption ? `<figcaption class=\"wp-element-caption\">${esc(p.table.caption)}</figcaption>` : ''}</figure>\\n<!-- /wp:table -->\\n\\n`;\n  }\n  if (i < sections.length - 1) html += sep();\n});\n\nif (p.closing) html += para(p.closing);\nhtml += `<!-- wp:paragraph {\"fontSize\":\"small\"} -->\\n<p class=\"has-small-font-size\"><em>This report describes community sentiment and activity. It is not an appraisal, price quote or financial advice.</em></p>\\n<!-- /wp:paragraph -->`;\n\nreturn [{ json: {\n  title: p.title,\n  slug: p.slug,\n  excerpt: p.excerpt,\n  content: html,\n  seo_title: p.seo_title,\n  meta_description: p.meta_description,\n  focus_keyphrase: p.focus_keyphrase,\n  word_count: $input.first().json.word_count\n} }];"
+      }
+    },
+    {
+      "id": "7c6e4505-15fa-471f-a9bb-b3906378f9ac",
+      "name": "WordPress: create draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3060,
+        40
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://watchcentro.com/wp-json/wp/v2/posts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  title: $json.title,\n  slug: $json.slug,\n  content: $json.content,\n  excerpt: $json.excerpt,\n  status: 'draft',\n  categories: [39],\n  tags: [77],\n  meta: {\n    _yoast_wpseo_title: $json.seo_title,\n    _yoast_wpseo_metadesc: $json.meta_description,\n    _yoast_wpseo_focuskw: $json.focus_keyphrase\n  }\n}) }}",
+        "options": {}
+      },
+      "credentials": {
+        "wordpressApi": {
+          "id": "LPEXDGdEBrfFA7NC",
+          "name": "WatchCentro"
+        }
+      }
+    },
+    {
+      "id": "b357a151-1908-44f9-9a75-77934a7dd9ff",
+      "name": "Respond: draft created",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3280,
+        200
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, status: 'draft', run_id: $('Normalize input').first().json.run_id, window: $('Normalize input').first().json.window, post_id: $json.id, edit_link: 'https://watchcentro.com/wp-admin/post.php?post=' + $json.id + '&action=edit', word_count: $('Render WP blocks').first().json.word_count }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "d065f30f-1817-45ab-9831-f1099ffac0ad",
+      "name": "Respond: blocked",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2620,
+        520
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, stage: $json.stage, run_id: $('Normalize input').first().json.run_id, reason: $json.reason }) }}",
+        "options": {
+          "responseCode": 422
+        }
+      }
+    },
+    {
+      "id": "4ae9a105-02a8-409c-8804-f18839299b05",
+      "name": "Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -140
+      ],
+      "parameters": {
+        "content": "## Watch Market Report pipeline (draft v1)\n\n**Flow:** raw digest \u2192 Sanitizer (LLM, allowlist schema) \u2192 code checks \u2192 Writer (LLM, sees sanitized JSON only) \u2192 Reviewer (LLM, sees raw + draft) \u2192 code checks \u2192 render blocks (code) \u2192 WordPress draft.\n\n**To wire up:** Anthropic credential on the three model nodes, WordPress credential on the HTTP node, and the webhook URL in your monitoring agent.\n\n**Config:** fill in GROUP_NAMES in both code-check nodes with every group name and nickname you monitor. Category 39 = Articles (feeds the homepage hero). Every report is tagged New (tag 77) so it appears in the homepage New tab. Hot (75) and Trending (76) are applied by hand.\n\n**Fail path:** returns HTTP 422 with the stage and reason. Nothing is published.\n\n**Always publishes as draft.** Change status to 'publish' only after a couple of weeks of reviewing drafts.",
+        "height": 380,
+        "width": 520
+      }
+    },
+    {
+      "id": "ac2ff332-3e84-4911-b21c-c6ca416b60fb",
+      "name": "Not a duplicate?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Not a duplicate?",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e57534e8-6820-495a-af81-356006bbee1e",
+      "name": "Respond: duplicate",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        -40
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, stage: 'duplicate', run_id: $json.run_id, reason: $json.reason }) }}",
+        "options": {
+          "responseCode": 409
+        }
+      }
+    },
+    {
+      "id": "12c39dd0-4894-43bc-8430-cc801e9e657b",
+      "name": "Live mode?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2840,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Live mode?",
+              "leftValue": "={{ $('Normalize input').first().json.mode === 'live' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "243039a8-d65e-4744-8976-383eb5f4f116",
+      "name": "Respond: test draft",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3060,
+        420
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, status: 'test', run_id: $('Normalize input').first().json.run_id, window: $('Normalize input').first().json.window, word_count: $json.word_count, post: { title: $json.title, slug: $json.slug, excerpt: $json.excerpt, seo_title: $json.seo_title, meta_description: $json.meta_description, focus_keyphrase: $json.focus_keyphrase, content: $json.content } }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "c106012e-ba8b-4dcf-9e82-06bef3aab3ac",
+      "name": "Record run id",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3060,
+        200
+      ],
+      "parameters": {
+        "jsCode": "// Record the run id only after WordPress created the draft, then pass the WordPress response through.\nconst meta = $('Normalize input').first().json;\nconst store = $getWorkflowStaticData('global');\nstore.liveRunIds = store.liveRunIds || {};\nstore.liveRunIds[meta.run_id] = new Date().toISOString();\nconst keys = Object.keys(store.liveRunIds);\nif (keys.length > 500) for (const k of keys.slice(0, keys.length - 500)) delete store.liveRunIds[k];\nreturn $input.all();"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: raw digest": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic: sanitizer model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sanitizer (LLM)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitizer (LLM)": {
+      "main": [
+        [
+          {
+            "node": "Parse + code checks (sanitizer)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse + code checks (sanitizer)": {
+      "main": [
+        [
+          {
+            "node": "Sanitizer passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sanitizer passed?": {
+      "main": [
+        [
+          {
+            "node": "Writer (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic: writer model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Writer (LLM)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Writer (LLM)": {
+      "main": [
+        [
+          {
+            "node": "Parse writer output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse writer output": {
+      "main": [
+        [
+          {
+            "node": "Reviewer (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic: reviewer model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reviewer (LLM)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reviewer (LLM)": {
+      "main": [
+        [
+          {
+            "node": "Parse review + code checks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse review + code checks": {
+      "main": [
+        [
+          {
+            "node": "Review passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review passed?": {
+      "main": [
+        [
+          {
+            "node": "Render WP blocks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: blocked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "Not a duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not a duplicate?": {
+      "main": [
+        [
+          {
+            "node": "Sanitizer (LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render WP blocks": {
+      "main": [
+        [
+          {
+            "node": "Live mode?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Live mode?": {
+      "main": [
+        [
+          {
+            "node": "WordPress: create draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: test draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WordPress: create draft": {
+      "main": [
+        [
+          {
+            "node": "Record run id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record run id": {
+      "main": [
+        [
+          {
+            "node": "Respond: draft created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "pinData": {}
+}
