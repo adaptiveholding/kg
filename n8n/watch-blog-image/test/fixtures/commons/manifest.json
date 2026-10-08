@@ -33,6 +33,26 @@
       "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex watch&gsrnamespace=6&gsrlimit=2&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
       "notes": "NOT a response to the recommended request: filetype:bitmap excludes MEDIATYPE_DRAWING, so SVGs never come back from it. Use only to unit-test the mime/extension filter and the vector thumb shape. 2 SVG pages (thumburl is a PNG render at 1920px; width/height are the SVG nominal size). Shows a continue block: {\"gsroffset\": 2, \"continue\": \"gsroffset||\"} with batchcomplete true. Page 2 is the same file as Openverse result 8 (curid 96530177)."
     },
+    "search-nothing-usable.json": {
+      "status": 200,
+      "headers": "api_200_headers",
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex Submariner filetype:bitmap&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "12 pages that each fail exactly one hard filter of \"Image: pick photo\", so nothing is usable (step 3 case: image null with a reason). Built with the same helpers as search-rolex-submariner.json (md5 hash paths, $wgThumbnailSteps thumbs, utm provenance strings, CommonsMetadata field order and hidden flags). query.pages is in database (binary title) order; relevance order is index. NC and ND files only exist on Commons until they are deleted, and Openverse cannot return them with license=by,by-sa,cc0,pdm; they are here to test the licence parser on real field shapes. For NC, ND, FAL, Attribution and \"No restrictions\" CommonsMetadata sets no machine License key.",
+      "pages": {
+        "1": "File:Rolex Submariner 5513 vintage.jpg, CC BY-NC-SA 2.0 (Flickr import). Reject: licence (NC).",
+        "2": "File:Rolex Submariner 124060 dial close-up.jpg, CC BY-ND 4.0. Reject: licence (ND).",
+        "3": "File:Rolex Submariner Hulk 116610LV.jpg, FAL (Free Art License). Reject: licence.",
+        "4": "File:Rolex Submariner 16800 matte dial.jpg, LicenseShortName \"Attribution\" ({{Attribution}}), no LicenseUrl. Reject: licence.",
+        "5": "File:Rolex Submariner 1958 (5512).jpg, Flickr Commons \"No restrictions\" (UsageTerms \"No known copyright restrictions\", LicenseUrl https://www.flickr.com/commons/usage/). Reject: licence.",
+        "6": "File:Rolex Submariner thumbnail.jpg, CC BY-SA 4.0, 800x600. Reject: width < MIN_WIDTH.",
+        "7": "File:Rolex Submariner display panorama Baselworld 2016.jpg, CC BY-SA 4.0, 9000x1500 (aspect 6.0). Reject: aspect.",
+        "8": "File:Rolex Submariner bezel rotation.gif, CC0, image/gif 1200x900 (GIF is MEDIATYPE_BITMAP). Reject: file type.",
+        "9": "File:Replica Rolex Submariner seized by customs.jpg, CC BY-SA 4.0, category Counterfeit watches. Reject: hard-exclude term.",
+        "10": "File:Rolex Submariner logo on the dial.jpg, CC BY 4.0, category Rolex logos, Restrictions trademarked. Reject: hard-exclude term logo.",
+        "11": "File:Rolex Submariner on the wrist of a racing driver.jpg, CC BY-SA 4.0, Restrictions \"personality|trademarked\". Reject: personality rights.",
+        "12": "File:Scuba diver off Cozumel.jpg, CC BY-SA 4.0, matched through structured data only (MediaSearch depicts); no brand in title, description or categories. Reject: not relevant."
+      }
+    },
     "search-empty.json": {
       "status": 200,
       "headers": "api_200_headers",

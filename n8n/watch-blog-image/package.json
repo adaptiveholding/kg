@@ -4,6 +4,6 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "node --test test/unit",
-    "test:e2e": "node --test test/e2e/smoke.test.mjs test/e2e/step2.e2e.mjs test/e2e/http-request.e2e.mjs"
+    "test:e2e": "node --test test/e2e/smoke.test.mjs test/e2e/step2.e2e.mjs test/e2e/http-request.e2e.mjs test/e2e/step3.e2e.mjs"
   }
 }

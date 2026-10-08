@@ -274,3 +274,17 @@ test('shapeResult leaves error bodies and empty results alone', () => {
   const err = { error: { code: 'maxlag' } };
   assert.equal(shapeResult(err, {}), err);
 });
+
+test('openverse mock: extension filter keeps only rows whose URL ends in a listed extension (indexer get_extension)', async () => {
+  const m = await startOpenverseMock({ quiet: true, fixtures: { 'Rolex watch': 'search-rolex-watch-nothing-usable.json' } });
+  try {
+    const plain = await get(ovSearch(m.url, { q: 'Rolex watch', license: 'by,by-sa,cc0,pdm' }), { 'User-Agent': UA });
+    const filtered = await get(ovSearch(m.url, { q: 'Rolex watch', license: 'by,by-sa,cc0,pdm', extension: 'jpg,jpeg,png,webp' }), { 'User-Agent': UA });
+    const exts = r => r.json.results.map(x => x.url.split('.').pop().toLowerCase());
+    assert.ok(exts(plain).some(e => ['svg', 'gif', 'tif'].includes(e)));
+    assert.ok(exts(filtered).length > 0 && exts(filtered).every(e => e === 'jpg'));
+    assert.equal(filtered.json.result_count, filtered.json.results.length);
+  } finally {
+    await m.close();
+  }
+});

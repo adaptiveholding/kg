@@ -25,6 +25,8 @@
 //     `self.initial_data.get("mature") or value`, so ANY non-empty mature value, including
 //     "mature=false", turns sensitive results ON (the raw string "false" is truthy). The mock does
 //     the same and records it as entry.sensitive_included.
+//   - extension: records whose URL's last dot segment (lower-cased; none when it holds "/") is not in
+//     the comma list are removed, like the ES terms filter on the indexer's URL-derived "extension".
 //   - Optional throttling: opts.burstLimit = N answers the (N+1)th and later searches with the 429
 //     fixture (Retry-After, X-RateLimit-* headers), as the anon_burst throttle does.
 //   - Token expiry: opts.tokenMaxUses = N makes every issued token "expired" after N authenticated
@@ -190,11 +192,23 @@ export async function startOpenverseMock(opts = {}) {
         let results = obj.results;
         if (!includeSensitive) results = results.filter((r) => r.mature !== true);
         const removed = obj.results.length - results.length;
+        // extension filter: a terms filter on the ES "extension" keyword, which the indexer derives from
+        // the URL (Image.get_extension: url.split(".")[-1].lower(), None when it contains "/").
+        const extRaw = last(query.extension);
+        if (extRaw !== undefined && extRaw !== '') {
+          const wanted = String(extRaw).toLowerCase().split(',');
+          const before = results.length;
+          results = results.filter((r) => {
+            const e = String(r.url || '').split('.').pop().toLowerCase();
+            return e && !e.includes('/') && wanted.includes(e);
+          });
+          if (before !== results.length) entry.extension_removed = before - results.length;
+        }
         results = results.slice(0, pageSize);
         if (removed) entry.sensitive_removed = removed;
         return {
           ...obj,
-          result_count: Math.max(0, (obj.result_count ?? results.length) - removed),
+          result_count: Math.max(0, (obj.result_count ?? results.length) - removed - (entry.extension_removed || 0)),
           page_size: pageSize,
           page,
           results,

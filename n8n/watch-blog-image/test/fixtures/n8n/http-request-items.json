@@ -1,0 +1,154 @@
+{
+  "_about": "Item JSON that n8n 2.42.5 HTTP Request 4.2 nodes with onError continueRegularOutput emit, recorded by test/e2e/http-request.e2e.mjs against the local Openverse and Commons mocks (stack paths shortened, otherwise verbatim). default_*: default response options (failed requests become AxiosError.toJSON(); body and headers are dropped). full_response_*: options.response.response {neverError: true, fullResponse: true} (text/html bodies land in \"data\"). ssrf_blocked: N8N_SSRF_PROTECTION_ENABLED=true and a private target (no request is made; no \"message\" key). invalid_json: from HttpRequestV3 source only (not run).",
+  "default_429": {
+    "error": {
+      "message": "Try spacing your requests out using the batching settings under 'Options'",
+      "name": "AxiosError",
+      "stack": "AxiosError: Request failed with status code 429\n    at settle (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:2199:12)\n    at RedirectableRequest.handleResponse (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:3965:9)\n    at RedirectableRequest.emit (node:events:526:24)\n    at RedirectableRequest._processResponse (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:433:10)\n    at ClientRequest.RedirectableRequest._onNativeResponse (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:109:12)\n    at ClientRequest.wrapper (node:events:639:12)\n    at ClientRequest.emit (node:events:514:28)\n    at HTTPParser.parserOnIncomingClient (node:_http_client:971:27)\n    at HTTPParser.parserOnHeadersComplete (node:_http_common:125:17)\n    at Socket.socketOnData (node:_http_client:806:22)\n    at Axios.request (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:5427:41)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at invokeAxios (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/axios/invoke.ts:15:10)\n    at executeLegacyRequest (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/legacy-request.ts:83:6)\n    at Object.requestLegacy (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/outbound-http.ts:213:13)\n    at proxyRequestToAxios (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/legacy-request-adapter.ts:27:9)\n    at Object.request (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/factory.ts:167:11)",
+      "code": "ERR_BAD_REQUEST",
+      "status": 429
+    }
+  },
+  "default_500": {
+    "error": {
+      "message": "500 - \"{\\n  \\\"detail\\\": \\\"An internal server error occurred.\\\"\\n}\"",
+      "name": "AxiosError",
+      "stack": "AxiosError: Request failed with status code 500\n    at settle (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:2199:12)\n    at RedirectableRequest.handleResponse (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:3965:9)\n    at RedirectableRequest.emit (node:events:526:24)\n    at RedirectableRequest._processResponse (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:433:10)\n    at ClientRequest.RedirectableRequest._onNativeResponse (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:109:12)\n    at ClientRequest.wrapper (node:events:639:12)\n    at ClientRequest.emit (node:events:514:28)\n    at HTTPParser.parserOnIncomingClient (node:_http_client:971:27)\n    at HTTPParser.parserOnHeadersComplete (node:_http_common:125:17)\n    at Socket.socketOnData (node:_http_client:806:22)\n    at Axios.request (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:5427:41)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at invokeAxios (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/axios/invoke.ts:15:10)\n    at executeLegacyRequest (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/legacy-request.ts:83:6)\n    at Object.requestLegacy (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/outbound-http.ts:213:13)\n    at proxyRequestToAxios (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/legacy-request-adapter.ts:27:9)\n    at Object.request (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/factory.ts:167:11)",
+      "code": "ERR_BAD_RESPONSE",
+      "status": 500
+    }
+  },
+  "default_timeout": {
+    "error": {
+      "message": "timeout of 3000ms exceeded",
+      "name": "AxiosError",
+      "stack": "AxiosError: timeout of 3000ms exceeded\n    at createTimeoutError (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:3562:14)\n    at RedirectableRequest.handleTimeout (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:4080:15)\n    at RedirectableRequest.emit (node:events:514:28)\n    at Timeout._onTimeout (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:233:12)\n    at listOnTimeout (node:internal/timers:685:17)\n    at processTimers (node:internal/timers:618:7)\n    at Axios.request (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:5427:41)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at invokeAxios (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/axios/invoke.ts:15:10)\n    at executeLegacyRequest (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/legacy-request.ts:83:6)\n    at Object.requestLegacy (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/outbound-http.ts:213:13)\n    at proxyRequestToAxios (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/legacy-request-adapter.ts:27:9)\n    at Object.request (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/factory.ts:167:11)",
+      "code": "ECONNABORTED"
+    }
+  },
+  "default_reset": {
+    "error": {
+      "message": "socket hang up",
+      "name": "Error",
+      "stack": "Error: socket hang up\n    at AxiosError.from (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:1355:24)\n    at RedirectableRequest.handleRequestError (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:4026:25)\n    at RedirectableRequest.emit (node:events:526:24)\n    at ClientRequest.eventHandlers.<computed> (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:56:24)\n    at ClientRequest.emit (node:events:514:28)\n    at emitErrorEvent (node:_http_client:114:11)\n    at Socket.socketOnEnd (node:_http_client:790:5)\n    at Socket.emit (node:events:526:24)\n    at endReadableNT (node:internal/streams/readable:1764:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)\n    at Axios.request (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:5427:41)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at invokeAxios (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/axios/invoke.ts:15:10)\n    at executeLegacyRequest (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/legacy-request.ts:83:6)\n    at Object.requestLegacy (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/outbound-http.ts:213:13)\n    at proxyRequestToAxios (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/legacy-request-adapter.ts:27:9)\n    at Object.request (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/factory.ts:167:11)",
+      "code": "ECONNRESET"
+    }
+  },
+  "default_commons_503_html": {
+    "error": {
+      "message": "503 - \"<!DOCTYPE html>\\n<html lang=\\\"en\\\">\\n<meta charset=\\\"utf-8\\\">\\n<title>Wikimedia Error</title>\\n<style>\\n* { margin: 0; padding: 0; }\\nbody { background: #fff; font: 15px/1.6 sans-serif; color: #333; }\\n.content { margin: 7% auto 0; padding: 2em 1em 1em; max-width: 640px; display: flex; flex-direction: row; flex-wrap: wrap; }\\n.footer { clear: both; margin-top: 14%; border-top: 1px solid #e5e5e5; background: #f9f9f9; padding: 2em 0; font-size: 0.8em; text-align: center; }\\nimg { margin: 0 2em 2em 0; }\\na img { border: 0; }\\nh1 { margin-top: 1em; font-size: 1.2em; }\\n.content-text { flex: 1; }\\np { margin: 0.7em 0 1em 0; }\\na { color: #0645ad; text-decoration: none; }\\na:hover { text-decoration: underline; }\\ncode { font-family: sans-serif; }\\nsummary { font-weight: bold; cursor: pointer; }\\ndetails[open] { background: #970302; color: #dfdedd; }\\n.text-muted { color: #777; }\\n@media (prefers-color-scheme: dark) {\\n  a { color: #9e9eff; }\\n  body { background: transparent; color: #ddd; }\\n  .footer { border-top: 1px solid #444; background: #060606; }\\n  #logo { filter: invert(1) hue-rotate(180deg); }\\n  .text-muted { color: #888; }\\n}\\n</style>\\n<meta name=\\\"color-scheme\\\" content=\\\"light dark\\\">\\n<div class=\\\"content\\\" role=\\\"main\\\">\\n<a href=\\\"https://www.wikimedia.org\\\"><img id=\\\"logo\\\" src=\\\"https://www.wikimedia.org/static/images/wmf-logo.png\\\" srcset=\\\"https://www.wikimedia.org/static/images/wmf-logo-2x.png 2x\\\" alt=\\\"Wikimedia\\\" width=\\\"135\\\" height=\\\"101\\\">\\n</a>\\n<div class=\\\"content-text\\\">\\n<h1>Error</h1>\\n\\n<p>Our servers are currently under maintenance or experiencing a technical issue</p>\\n</div>\\n</div>\\n<div class=\\\"footer\\\"><p>If you report this error to the Wikimedia System Administrators, please include the details below.</p><p class=\\\"text-muted\\\"><code>Request served via cp3066 cp3066, Varnish XID 812734521<br>Upstream caches: cp3066 int<br>Error: 503, Our servers are currently under maintenance or experiencing a technical issue at Thu, 08 Oct 2026 12:00:00 GMT<br><details><summary>Sensitive client information</summary>IP address: 203.0.113.7</details></code></p>\\n</div>\\n</html>\\n\"",
+      "name": "AxiosError",
+      "stack": "AxiosError: Request failed with status code 503\n    at settle (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:2199:12)\n    at RedirectableRequest.handleResponse (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:3965:9)\n    at RedirectableRequest.emit (node:events:526:24)\n    at RedirectableRequest._processResponse (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:433:10)\n    at ClientRequest.RedirectableRequest._onNativeResponse (/usr/local/lib/node_modules/n8n/node_modules/follow-redirects/index.js:109:12)\n    at ClientRequest.wrapper (node:events:639:12)\n    at ClientRequest.emit (node:events:514:28)\n    at HTTPParser.parserOnIncomingClient (node:_http_client:971:27)\n    at HTTPParser.parserOnHeadersComplete (node:_http_common:125:17)\n    at Socket.socketOnData (node:_http_client:806:22)\n    at Axios.request (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/node_modules/axios/dist/node/axios.cjs:5427:41)\n    at processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at invokeAxios (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/axios/invoke.ts:15:10)\n    at executeLegacyRequest (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/legacy-request.ts:83:6)\n    at Object.requestLegacy (/usr/local/lib/node_modules/n8n/node_modules/@n8n/backend-network/src/http/outbound-http.ts:213:13)\n    at proxyRequestToAxios (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/legacy-request-adapter.ts:27:9)\n    at Object.request (/usr/local/lib/node_modules/n8n/node_modules/n8n-core/src/execution-engine/node-execution-context/utils/request-helpers/factory.ts:167:11)",
+      "code": "ERR_BAD_RESPONSE",
+      "status": 503
+    }
+  },
+  "full_response_429": {
+    "body": {
+      "detail": "Request was throttled. Expected available in 37 seconds."
+    },
+    "headers": {
+      "content-type": "application/json",
+      "content-length": "74",
+      "vary": "Accept, Authorization, origin",
+      "allow": "GET, HEAD, OPTIONS",
+      "retry-after": "37",
+      "x-ratelimit-limit-anon_burst": "20/min",
+      "x-ratelimit-available-anon_burst": "0",
+      "x-ratelimit-limit-anon_sustained": "200/day",
+      "x-ratelimit-available-anon_sustained": "143",
+      "date": "Thu, 08 Oct 2026 22:52:10 GMT",
+      "connection": "close"
+    },
+    "statusCode": 429,
+    "statusMessage": "Too Many Requests"
+  },
+  "full_response_500": {
+    "body": {
+      "detail": "An internal server error occurred."
+    },
+    "headers": {
+      "content-type": "application/json",
+      "content-length": "52",
+      "date": "Thu, 08 Oct 2026 22:52:10 GMT",
+      "connection": "close"
+    },
+    "statusCode": 500,
+    "statusMessage": "Internal Server Error"
+  },
+  "full_response_commons_maxlag": {
+    "body": {
+      "error": {
+        "code": "maxlag",
+        "info": "Waiting for 10.64.48.35: 7.18 seconds lagged.",
+        "host": "10.64.48.35",
+        "lag": 7.18,
+        "type": "db",
+        "docref": "See https://commons.wikimedia.org/w/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/postorius/lists/mediawiki-api-announce.lists.wikimedia.org/&gt; for notice of API deprecations and breaking changes."
+      },
+      "servedby": "mw-api-ext.eqiad.main-7f9c6b8d5-x4k2p"
+    },
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "500",
+      "cache-control": "private, must-revalidate, max-age=0",
+      "mediawiki-api-error": "maxlag",
+      "retry-after": "5",
+      "x-database-lag": "7",
+      "date": "Thu, 08 Oct 2026 22:52:14 GMT",
+      "connection": "close"
+    },
+    "statusCode": 200,
+    "statusMessage": "OK"
+  },
+  "full_response_commons_503_html": {
+    "data": "<!DOCTYPE html>\n<html lang=\"en\">\n<meta charset=\"utf-8\">\n<title>Wikimedia Error</title>\n<style>\n* { margin: 0; padding: 0; }\nbody { background: #fff; font: 15px/1.6 sans-serif; color: #333; }\n.content { margin: 7% auto 0; padding: 2em 1em 1em; max-width: 640px; display: flex; flex-direction: row; flex-wrap: wrap; }\n.footer { clear: both; margin-top: 14%; border-top: 1px solid #e5e5e5; background: #f9f9f9; padding: 2em 0; font-size: 0.8em; text-align: center; }\nimg { margin: 0 2em 2em 0; }\na img { border: 0; }\nh1 { margin-top: 1em; font-size: 1.2em; }\n.content-text { flex: 1; }\np { margin: 0.7em 0 1em 0; }\na { color: #0645ad; text-decoration: none; }\na:hover { text-decoration: underline; }\ncode { font-family: sans-serif; }\nsummary { font-weight: bold; cursor: pointer; }\ndetails[open] { background: #970302; color: #dfdedd; }\n.text-muted { color: #777; }\n@media (prefers-color-scheme: dark) {\n  a { color: #9e9eff; }\n  body { background: transparent; color: #ddd; }\n  .footer { border-top: 1px solid #444; background: #060606; }\n  #logo { filter: invert(1) hue-rotate(180deg); }\n  .text-muted { color: #888; }\n}\n</style>\n<meta name=\"color-scheme\" content=\"light dark\">\n<div class=\"content\" role=\"main\">\n<a href=\"https://www.wikimedia.org\"><img id=\"logo\" src=\"https://www.wikimedia.org/static/images/wmf-logo.png\" srcset=\"https://www.wikimedia.org/static/images/wmf-logo-2x.png 2x\" alt=\"Wikimedia\" width=\"135\" height=\"101\">\n</a>\n<div class=\"content-text\">\n<h1>Error</h1>\n\n<p>Our servers are currently under maintenance or experiencing a technical issue</p>\n</div>\n</div>\n<div class=\"footer\"><p>If you report this error to the Wikimedia System Administrators, please include the details below.</p><p class=\"text-muted\"><code>Request served via cp3066 cp3066, Varnish XID 812734521<br>Upstream caches: cp3066 int<br>Error: 503, Our servers are currently under maintenance or experiencing a technical issue at Thu, 08 Oct 2026 12:00:00 GMT<br><details><summary>Sensitive client information</summary>IP address: 203.0.113.7</details></code></p>\n</div>\n</html>\n",
+    "headers": {
+      "content-type": "text/html; charset=utf-8",
+      "content-length": "2063",
+      "date": "Thu, 08 Oct 2026 22:52:14 GMT",
+      "connection": "close"
+    },
+    "statusCode": 503,
+    "statusMessage": "Service Unavailable"
+  },
+  "full_response_openverse_empty": {
+    "body": {
+      "result_count": 0,
+      "page_count": 0,
+      "page_size": 20,
+      "page": 1,
+      "results": []
+    },
+    "headers": {
+      "content-type": "application/json",
+      "content-length": "91",
+      "vary": "Accept-Encoding, Accept, Authorization, origin",
+      "allow": "GET, HEAD, OPTIONS",
+      "x-ratelimit-limit-anon_burst": "20/min",
+      "x-ratelimit-available-anon_burst": "19",
+      "x-ratelimit-limit-anon_sustained": "200/day",
+      "x-ratelimit-available-anon_sustained": "161",
+      "date": "Thu, 08 Oct 2026 22:52:11 GMT",
+      "connection": "close"
+    },
+    "statusCode": 200,
+    "statusMessage": "OK"
+  },
+  "ssrf_blocked": {
+    "error": {
+      "level": "info",
+      "shouldReport": false,
+      "description": "The target 127.0.0.1 is not allowed. This is a security measure to prevent Server-Side Request Forgery (SSRF)...",
+      "tags": {},
+      "extra": {
+        "ip": "127.0.0.1"
+      },
+      "name": "SsrfBlockedIpError",
+      "ip": "127.0.0.1"
+    }
+  },
+  "invalid_json": {
+    "error": "Invalid JSON in response body"
+  }
+}
