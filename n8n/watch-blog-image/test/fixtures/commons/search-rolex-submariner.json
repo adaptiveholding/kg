@@ -1,0 +1,994 @@
+{
+  "batchcomplete": true,
+  "query": {
+    "pages": [
+      {
+        "pageid": 67324118,
+        "ns": 6,
+        "title": "File:Rolex Submariner 16610 with box and papers.jpg",
+        "index": 5,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 2954110,
+            "width": 3000,
+            "height": 2000,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Rolex_Submariner_16610_with_box_and_papers.jpg/1920px-Rolex_Submariner_16610_with_box_and_papers.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1280,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/1/10/Rolex_Submariner_16610_with_box_and_papers.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Rolex_Submariner_16610_with_box_and_papers.jpg/1920px-Rolex_Submariner_16610_with_box_and_papers.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1280,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/1/10/Rolex_Submariner_16610_with_box_and_papers.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/1/10/Rolex_Submariner_16610_with_box_and_papers.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_16610_with_box_and_papers.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=67324118",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner 16610 with box and papers",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner Date|Watch boxes",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Rolex Submariner Date 16610 with its original box and papers",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Tempus_Fugit_NL\" title=\"User:Tempus Fugit NL\">Tempus Fugit NL</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Zero, Public Domain Dedication",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "trademarked",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 141877201,
+        "ns": 6,
+        "title": "File:Rolex Submariner 1680 scan.tif",
+        "index": 10,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 36632192,
+            "width": 4288,
+            "height": 2848,
+            "pagecount": 1,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Rolex_Submariner_1680_scan.tif/lossy-page1-1920px-Rolex_Submariner_1680_scan.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1275,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Rolex_Submariner_1680_scan.tif/lossy-page1-3840px-Rolex_Submariner_1680_scan.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Rolex_Submariner_1680_scan.tif/lossy-page1-1920px-Rolex_Submariner_1680_scan.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1275,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Rolex_Submariner_1680_scan.tif/lossy-page1-3840px-Rolex_Submariner_1680_scan.tif.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Rolex_Submariner_1680_scan.tif?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_1680_scan.tif",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=141877201",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner 1680 scan",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Scan of a Rolex Submariner 1680 advertisement photo print",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Archivscan\" title=\"User:Archivscan\">Archivscan</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/tiff"
+          }
+        ]
+      },
+      {
+        "pageid": 34418877,
+        "ns": 6,
+        "title": "File:Rolex Submariner Date 116610LN Uhrenmesse 2014.jpg",
+        "index": 3,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 3912764,
+            "width": 3264,
+            "height": 2448,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg/1920px-Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1440,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg/1920px-Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1440,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=34418877",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner Date 116610LN Uhrenmesse 2014",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner Date|Watch fairs in Germany",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Rolex Submariner Date (Ref. 116610LN) auf einer Uhrenmesse in München, 2014",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Kronograph\" title=\"User:Kronograph\">Kronograph</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 3.0 de",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 3.0 de",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Attribution": {
+                "value": "Foto: Kronograph / <a rel=\"nofollow\" class=\"external text\" href=\"https://commons.wikimedia.org/wiki/File:Rolex_Submariner_Date_116610LN_Uhrenmesse_2014.jpg\">Wikimedia Commons</a> / <a rel=\"nofollow\" class=\"external text\" href=\"https://creativecommons.org/licenses/by-sa/3.0/de/deed.en\">CC BY-SA 3.0 DE</a>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-3.0-de",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 118904562,
+        "ns": 6,
+        "title": "File:Rolex Submariner Date 116610LV.jpg",
+        "index": 11,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 2215870,
+            "width": 2048,
+            "height": 1536,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Rolex_Submariner_Date_116610LV.jpg/1920px-Rolex_Submariner_Date_116610LV.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1440,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Rolex_Submariner_Date_116610LV.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Rolex_Submariner_Date_116610LV.jpg/1920px-Rolex_Submariner_Date_116610LV.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1440,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Rolex_Submariner_Date_116610LV.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Rolex_Submariner_Date_116610LV.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_Date_116610LV.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=118904562",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner Date 116610LV",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner Date",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Rolex Submariner Date 116610LV with green bezel",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseShortName": {
+                "value": "CC BY 3.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution 3.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by/3.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-3.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 148213907,
+        "ns": 6,
+        "title": "File:Rolex Submariner Date 126610LN.jpg",
+        "index": 1,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 3874211,
+            "width": 4032,
+            "height": 3024,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rolex_Submariner_Date_126610LN.jpg/1920px-Rolex_Submariner_Date_126610LN.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1440,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rolex_Submariner_Date_126610LN.jpg/3840px-Rolex_Submariner_Date_126610LN.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rolex_Submariner_Date_126610LN.jpg/1920px-Rolex_Submariner_Date_126610LN.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1440,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rolex_Submariner_Date_126610LN.jpg/3840px-Rolex_Submariner_Date_126610LN.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Rolex_Submariner_Date_126610LN.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_Date_126610LN.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=148213907",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner Date 126610LN",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner Date|Self-published work",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "<a href=\"https://en.wikipedia.org/wiki/Rolex_Submariner\" class=\"extiw\" title=\"en:Rolex Submariner\">Rolex Submariner</a> Date, reference 126610LN, with black dial and black Cerachrom bezel.",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Horologium42\" title=\"User:Horologium42\">Horologium42</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 150337412,
+        "ns": 6,
+        "title": "File:Rolex Submariner Date 126610LN (53218846721).jpg",
+        "index": 2,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 6120394,
+            "width": 5472,
+            "height": 3648,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg/1920px-Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1280,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg/3840px-Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg/1920px-Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1280,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg/3840px-Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_Date_126610LN_(53218846721).jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=150337412",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner Date 126610LN (53218846721)",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner Date|Flickr images reviewed by FlickreviewR 2",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Rolex Submariner Date 126610LN, Lisbon",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/photos/41894170373@N01/53218846721/\">Rolex Submariner Date 126610LN</a>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.flickr.com/people/41894170373@N01\">chronoshots</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY 2.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution 2.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by/2.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-2.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 5528391,
+        "ns": 6,
+        "title": "File:Rolex Submariner Sydney 2008.jpg",
+        "index": 4,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 2201176,
+            "width": 2592,
+            "height": 1944,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Rolex_Submariner_Sydney_2008.jpg/1920px-Rolex_Submariner_Sydney_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1440,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Rolex_Submariner_Sydney_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Rolex_Submariner_Sydney_2008.jpg/1920px-Rolex_Submariner_Sydney_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1440,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Rolex_Submariner_Sydney_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Rolex_Submariner_Sydney_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_Sydney_2008.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=5528391",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner Sydney 2008",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner|Wristwatches in Australia",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "A Rolex Submariner photographed in Sydney, 2008.",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "Transferred from <span class=\"plainlinks\"><a class=\"external text\" href=\"https://en.wikipedia.org\">en.wikipedia</a></span> to Commons.",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "The original uploader was <a href=\"https://en.wikipedia.org/wiki/User:Tickticktock\" class=\"extiw\" title=\"w:User:Tickticktock\">Tickticktock</a> at <a href=\"https://en.wikipedia.org/wiki/\" class=\"extiw\" title=\"w:\">English Wikipedia</a>.",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "GFDL",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "GNU Free Documentation License",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "http://www.gnu.org/copyleft/fdl.html",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 12093410,
+        "ns": 6,
+        "title": "File:Rolex Submariner small.jpg",
+        "index": 6,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 61234,
+            "width": 640,
+            "height": 427,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Rolex_Submariner_small.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "thumbwidth": 1920,
+            "thumbheight": 1281,
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Rolex_Submariner_small.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1281
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Rolex_Submariner_small.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_small.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=12093410",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner small",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Rolex Submariner",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/w/index.php?title=User:Diver1987&amp;action=edit&amp;redlink=1\" class=\"new\" title=\"User:Diver1987 (page does not exist)\">Diver1987</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 3.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 3.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/3.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-3.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 81236650,
+        "ns": 6,
+        "title": "File:Rolex Submariner worn by model at Baselworld 2019.jpg",
+        "index": 8,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 4410228,
+            "width": 4032,
+            "height": 3024,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg/1920px-Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+            "thumbwidth": 1920,
+            "thumbheight": 1440,
+            "responsiveUrls": {
+              "2": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg/3840px-Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail"
+            },
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg/1920px-Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1440,
+              "srcset": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg/3840px-Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail 2x"
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_Submariner_worn_by_model_at_Baselworld_2019.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=81236650",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex Submariner worn by model at Baselworld 2019",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner|Baselworld 2019",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "A model wearing a Rolex Submariner at Baselworld 2019",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<span class=\"int-own-work\" lang=\"en\">Own work</span>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Uhrwerk_Foto\" title=\"User:Uhrwerk Foto\">Uhrwerk Foto</a>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Creative Commons Attribution-Share Alike 4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "true",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "True",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "personality|trademarked",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "cc-by-sa-4.0",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      },
+      {
+        "pageid": 60125876,
+        "ns": 6,
+        "title": "File:Rolex crown logo (Submariner dial).png",
+        "index": 9,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 31876,
+            "width": 1200,
+            "height": 700,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Rolex_crown_logo_%28Submariner_dial%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "thumbwidth": 1920,
+            "thumbheight": 1120,
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Rolex_crown_logo_%28Submariner_dial%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1120
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Rolex_crown_logo_%28Submariner_dial%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Rolex_crown_logo_(Submariner_dial).png",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=60125876",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "Rolex crown logo (Submariner dial)",
+                "source": "mediawiki-metadata",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex logos|PD textlogo",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "Rolex crown logo as printed on the Submariner dial",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "Traced from the dial of a Rolex Submariner",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "Rolex",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "False",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "trademarked",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "pd",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/png"
+          }
+        ]
+      },
+      {
+        "pageid": 9921354,
+        "ns": 6,
+        "title": "File:US Navy diver wearing Rolex Submariner 5513, 1972.jpg",
+        "index": 7,
+        "imagerepository": "local",
+        "imageinfo": [
+          {
+            "size": 412339,
+            "width": 1800,
+            "height": 1350,
+            "thumburl": "https://upload.wikimedia.org/wikipedia/commons/2/2e/US_Navy_diver_wearing_Rolex_Submariner_5513%2C_1972.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+            "thumbwidth": 1920,
+            "thumbheight": 1440,
+            "thumbattribs": {
+              "src": "https://upload.wikimedia.org/wikipedia/commons/2/2e/US_Navy_diver_wearing_Rolex_Submariner_5513%2C_1972.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+              "decoding": "async",
+              "loading": "lazy",
+              "width": 1920,
+              "height": 1440
+            },
+            "url": "https://upload.wikimedia.org/wikipedia/commons/2/2e/US_Navy_diver_wearing_Rolex_Submariner_5513%2C_1972.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:US_Navy_diver_wearing_Rolex_Submariner_5513,_1972.jpg",
+            "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=9921354",
+            "extmetadata": {
+              "ObjectName": {
+                "value": "<div class=\"fn\">\n<span style=\"font-weight:bold\"><span dir=\"ltr\" lang=\"en\"><i>Navy diver with a Rolex Submariner 5513</i></span></span><div style=\"display: none;\">label QS:Len,\"Navy diver with a Rolex Submariner 5513\"</div>\n</div>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Categories": {
+                "value": "Rolex Submariner|United States Navy divers|PD US Navy",
+                "source": "commons-categories",
+                "hidden": ""
+              },
+              "ImageDescription": {
+                "value": "A U.S. Navy diver wearing a Rolex Submariner 5513 during a training dive, 1972.",
+                "source": "commons-desc-page"
+              },
+              "Credit": {
+                "value": "<a rel=\"nofollow\" class=\"external text\" href=\"https://www.history.navy.mil/\">Naval History and Heritage Command</a>",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Artist": {
+                "value": "<div class=\"fn value\">\n<span lang=\"en\">Unknown</span>\n</div>",
+                "source": "commons-desc-page"
+              },
+              "LicenseShortName": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "UsageTerms": {
+                "value": "Public domain",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "AttributionRequired": {
+                "value": "false",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Copyrighted": {
+                "value": "False",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "Restrictions": {
+                "value": "",
+                "source": "commons-desc-page",
+                "hidden": ""
+              },
+              "License": {
+                "value": "pd",
+                "source": "commons-templates",
+                "hidden": ""
+              }
+            },
+            "mime": "image/jpeg"
+          }
+        ]
+      }
+    ]
+  }
+}

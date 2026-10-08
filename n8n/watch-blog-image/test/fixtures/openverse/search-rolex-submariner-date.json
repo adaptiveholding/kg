@@ -1,0 +1,180 @@
+{
+  "result_count": 4,
+  "page_count": 1,
+  "page_size": 20,
+  "page": 1,
+  "results": [
+    {
+      "id": "a765171e-3b3a-5da9-9e17-ebaae6a89b6f",
+      "title": "Rolex Submariner Date 126610LN",
+      "indexed_on": "2023-11-02T14:21:09.513782Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/41894170373@N01/53218846721",
+      "url": "https://live.staticflickr.com/65535/53218846721_9c1e4b7a2f_b.jpg",
+      "creator": "chronoshots",
+      "creator_url": "https://www.flickr.com/photos/41894170373@N01",
+      "license": "by",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": "photograph",
+      "filesize": null,
+      "filetype": "jpg",
+      "tags": [
+        {
+          "name": "rolex",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "submariner",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "submarinerdate",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "126610ln",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristwatch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "divewatch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "swissmade",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": 0.99417,
+          "unstable__provider": "clarifai"
+        },
+        {
+          "name": "wristwatch",
+          "accuracy": 0.9723,
+          "unstable__provider": "clarifai"
+        }
+      ],
+      "attribution": "\"Rolex Submariner Date 126610LN\" by chronoshots is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+      "fields_matched": [
+        "description",
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 683,
+      "width": 1024,
+      "thumbnail": "https://api.openverse.org/v1/images/a765171e-3b3a-5da9-9e17-ebaae6a89b6f/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/a765171e-3b3a-5da9-9e17-ebaae6a89b6f/",
+      "related_url": "https://api.openverse.org/v1/images/a765171e-3b3a-5da9-9e17-ebaae6a89b6f/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "ed296e8f-1cb3-5e22-825d-ddbd552c338c",
+      "title": "Rolex Submariner Date 126610LN",
+      "indexed_on": "2024-06-18T03:12:44.208511Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=148213907",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Rolex_Submariner_Date_126610LN.jpg",
+      "creator": "Horologium42",
+      "creator_url": "https://commons.wikimedia.org/wiki/User:Horologium42",
+      "license": "by-sa",
+      "license_version": "4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": null,
+      "filesize": 3874211,
+      "filetype": "jpg",
+      "tags": [],
+      "attribution": "\"Rolex Submariner Date 126610LN\" by Horologium42 is licensed under CC BY-SA 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 3024,
+      "width": 4032,
+      "thumbnail": "https://api.openverse.org/v1/images/ed296e8f-1cb3-5e22-825d-ddbd552c338c/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/ed296e8f-1cb3-5e22-825d-ddbd552c338c/",
+      "related_url": "https://api.openverse.org/v1/images/ed296e8f-1cb3-5e22-825d-ddbd552c338c/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "149d8686-eb6f-51c9-a31f-86efb87a8d42",
+      "title": "Rolex Submariner Date 116610LV",
+      "indexed_on": "2022-05-21T09:58:26.663420Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=118904562",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Rolex_Submariner_Date_116610LV.jpg",
+      "creator": null,
+      "creator_url": null,
+      "license": "by",
+      "license_version": "3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": null,
+      "filesize": 2215870,
+      "filetype": "jpg",
+      "tags": [],
+      "attribution": "\"Rolex Submariner Date 116610LV\" is licensed under CC BY 3.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/3.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 1536,
+      "width": 2048,
+      "thumbnail": "https://api.openverse.org/v1/images/149d8686-eb6f-51c9-a31f-86efb87a8d42/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/149d8686-eb6f-51c9-a31f-86efb87a8d42/",
+      "related_url": "https://api.openverse.org/v1/images/149d8686-eb6f-51c9-a31f-86efb87a8d42/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "d3e4d1e1-c069-5080-b265-b206da47bdea",
+      "title": "Rolex Submariner Date 126610LN (53218846721)",
+      "indexed_on": "2024-09-02T12:40:57.019944Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=150337412",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Rolex_Submariner_Date_126610LN_%2853218846721%29.jpg",
+      "creator": "chronoshots",
+      "creator_url": "https://www.flickr.com/people/41894170373@N01",
+      "license": "by",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": null,
+      "filesize": 6120394,
+      "filetype": "jpg",
+      "tags": [],
+      "attribution": "\"Rolex Submariner Date 126610LN (53218846721)\" by chronoshots is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 3648,
+      "width": 5472,
+      "thumbnail": "https://api.openverse.org/v1/images/d3e4d1e1-c069-5080-b265-b206da47bdea/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/d3e4d1e1-c069-5080-b265-b206da47bdea/",
+      "related_url": "https://api.openverse.org/v1/images/d3e4d1e1-c069-5080-b265-b206da47bdea/related/",
+      "unstable__sensitivity": []
+    }
+  ]
+}

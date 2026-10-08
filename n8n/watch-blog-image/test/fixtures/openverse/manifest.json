@@ -1,0 +1,132 @@
+{
+  "about": "Openverse API fixtures for the step 3 tests. Bodies match the serializers at WordPress/openverse commit c815ba4942a3d53cb687d51121f7d44caec7b7e3 (api/api/serializers/image_serializers.py ImageSerializer, field order from api/api/constants/field_order.py; attribution and license_url computed with packages/python/openverse-attribution). Status codes and headers follow DRF 3.15.1 / django-oauth-toolkit 3.0.1 as pinned in api/pdm.lock, and the production rate limits recorded in frontend/test/tapes/search/images (2024). Records, ids, users and files are synthetic.",
+  "anonymous_200_headers": {
+    "Content-Type": "application/json",
+    "Vary": "Accept-Encoding, Accept, Authorization, origin",
+    "Allow": "GET, HEAD, OPTIONS",
+    "X-RateLimit-Limit-anon_burst": "20/min",
+    "X-RateLimit-Available-anon_burst": "19",
+    "X-RateLimit-Limit-anon_sustained": "200/day",
+    "X-RateLimit-Available-anon_sustained": "161"
+  },
+  "fixtures": {
+    "search-rolex-submariner.json": {
+      "status": 200,
+      "headers": "anonymous_200_headers",
+      "request": "GET /v1/images/?q=Rolex+Submariner&license=by,by-sa,cc0,pdm&page_size=20",
+      "notes": "14 results (fewer than page_size, so page_count 1 and result_count = len(results), as search_controller._get_result_and_page_count does). 0: Flickr CC BY 2.0 1024x683 'Rolex Submariner Date 126610LN', tags. 1: Commons BY-SA 4.0 4032x3024, same file name as a Commons fixture should use (pageid 148213907). 2: Flickr CC0 1024x768. 3: Flickr PDM 1024x1024. 4: Flickr BY-SA portrait 683x1024 (too narrow). 5: Flickr 240x160 '_m' (tiny). 6: width/height null. 7: mature true (only returned when sensitive results are included, for example when the request carries mature=...; see facts). 8: SVG illustration. 9: 'Fake ... replica'. 10: title 'IMG_4821', matched only in the description, which the API does not return. 11: legacy Commons row: title keeps 'File:' and '.jpg', license_url http://.../deed.en, filetype null; negative terms box/papers. 12: Commons BY 3.0 with creator null. 13: Commons copy of result 0 uploaded via Flickr2Commons (different URL and size)."
+    },
+    "search-rolex-submariner-date.json": {
+      "status": 200,
+      "headers": "anonymous_200_headers",
+      "request": "GET /v1/images/?q=Rolex+Submariner+Date&license=by,by-sa,cc0,pdm&page_size=20",
+      "notes": "Subset of search-rolex-submariner.json (results 0, 1, 12, 13): q terms are ANDed, so every result has rolex, submariner and date in title, description or tags."
+    },
+    "search-luxury-wristwatch.json": {
+      "status": 200,
+      "headers": "anonymous_200_headers",
+      "request": "GET /v1/images/?q=luxury+wristwatch&license=by,by-sa,cc0,pdm&page_size=20",
+      "notes": "Generic query. 0: Flickr CC0 1024x683 'Luxury wristwatch' (the clean pick). 1: Commons BY-SA 3200x2400 with 'caseback' (negative term). 2: Flickr BY portrait 791x1024 advertisement. 3: Flickr BY-SA portrait 768x1024. 4: Flickr PDM 1024x768 with 'store' (negative term)."
+    },
+    "search-rolex-watch-nothing-usable.json": {
+      "status": 200,
+      "headers": "anonymous_200_headers",
+      "request": "GET /v1/images/?q=Rolex+watch&license=by,by-sa,cc0,pdm&page_size=20",
+      "notes": "Every result fails a hard filter: SVG logo, replica, 240x180, 683 wide portrait, 6000x1400 panorama (aspect 4.29), GIF, TIFF (title keeps '.tif'; the ingester only strips .png/.jpg/.jpeg/.ogg/.wav), mature, counterfeit. No NC/ND rows: with license=by,by-sa,cc0,pdm the API cannot return them."
+    },
+    "search-empty.json": {
+      "status": 200,
+      "headers": "anonymous_200_headers",
+      "request": "any q with no match",
+      "notes": "Exact shape of a recorded production response (frontend/test/tapes/search/images/q=querywithnoresults_keep-alive.json5)."
+    },
+    "error-429-throttled.json": {
+      "status": 429,
+      "headers": {
+        "Content-Type": "application/json",
+        "Vary": "Accept, Authorization, origin",
+        "Allow": "GET, HEAD, OPTIONS",
+        "Retry-After": "37",
+        "X-RateLimit-Limit-anon_burst": "20/min",
+        "X-RateLimit-Available-anon_burst": "0",
+        "X-RateLimit-Limit-anon_sustained": "200/day",
+        "X-RateLimit-Available-anon_sustained": "143"
+      },
+      "request": "any search once the anonymous burst limit is used up",
+      "notes": "Body is DRF Throttled: 'Request was throttled. Expected available in N seconds.' ('1 second' when N is 1). Retry-After is set by rest_framework.views.exception_handler from Throttled.wait (math.ceil). The day limit gives the same body with a larger N (up to 86400). Registered apps see X-RateLimit-*-oauth2_client_credentials_burst / _sustained instead of anon_*."
+    },
+    "error-401-invalid-token.json": {
+      "status": 401,
+      "headers": {
+        "Content-Type": "application/json",
+        "WWW-Authenticate": "Bearer realm=\"api\",error=\"invalid_token\",error_description=\"The access token is invalid.\""
+      },
+      "variants": {
+        "expired token": "Bearer realm=\"api\",error=\"invalid_token\",error_description=\"The access token has expired.\""
+      },
+      "request": "GET /v1/images/?q=... with Authorization: Bearer <unknown or expired token>",
+      "notes": "conf/oauth2_extensions.OAuth2Authentication raises AuthenticationFailed when django-oauth-toolkit set request.oauth2_error. Authentication runs before throttling, so no X-RateLimit headers."
+    },
+    "error-401-page-size.json": {
+      "status": 401,
+      "headers": {
+        "Content-Type": "application/json",
+        "WWW-Authenticate": "Bearer realm=\"api\"",
+        "X-RateLimit-Limit-anon_burst": "20/min",
+        "X-RateLimit-Available-anon_burst": "18",
+        "X-RateLimit-Limit-anon_sustained": "200/day",
+        "X-RateLimit-Available-anon_sustained": "160"
+      },
+      "request": "GET /v1/images/?q=...&page_size=21 without a token",
+      "notes": "PaginatedRequestSerializer.validate_page_size raises NotAuthenticated above 20 (anonymous) or 50 (registered). Also returned as 'pagination depth may not exceed 240 for anonymous requests' when page*page_size > 240."
+    },
+    "error-400-invalid-license.json": {
+      "status": 400,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "request": "GET /v1/images/?q=...&license=by-nc-x",
+      "notes": "MediaSearchRequestSerializer.validate_license; api/api/utils/exceptions.py wraps every ValidationError in {detail: ...}. A space after a comma ('by, by-sa') is also rejected. An empty q (q=) is NOT an error: DRF treats a blank optional query param as absent, so the search runs with no text query and returns unrelated popular images."
+    },
+    "error-500.json": {
+      "status": 500,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "request": "any, when the app fails",
+      "notes": "Body served by api/nginx/nginx.conf.template location /500.json."
+    },
+    "auth-register-201.json": {
+      "status": 201,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "request": "POST /v1/auth_tokens/register/ with JSON {\"name\", \"description\", \"email\"}",
+      "notes": "client_id is 40 and client_secret 128 alphanumeric characters (django-oauth-toolkit generators). The secret cannot be fetched again. Throttle: 10/day per IP (TenPerDay)."
+    },
+    "auth-token-200.json": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "request": "POST /v1/auth_tokens/token/ with form body grant_type=client_credentials&client_id=...&client_secret=... (or HTTP Basic client auth)",
+      "notes": "oauthlib BearerToken.create_token key order. expires_in is ACCESS_TOKEN_EXPIRE_SECONDS, 43200 by default in api/conf/settings/oauth2.py (env override possible; the API docs example still shows 36000). No refresh_token for client_credentials."
+    },
+    "auth-token-401-invalid-client.json": {
+      "status": 401,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "request": "POST /v1/auth_tokens/token/ with a wrong client_id or client_secret",
+      "notes": "oauthlib InvalidClientError, re-wrapped by api/api/views/oauth2_views.TokenView (headers from oauthlib are dropped). A missing or wrong grant_type gives 400 {\"error\": \"unsupported_grant_type\"} or {\"error\": \"invalid_request\", ...}."
+    },
+    "rate-limit-200.json": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "request": "GET /v1/rate_limit/ with Authorization: Bearer <token>",
+      "notes": "OAuth2KeyInfoSerializer. Counts are null when nothing is cached yet (or 424 when Redis is down). Without a token: 401 {\"detail\": \"Authentication credentials were not provided.\"}."
+    }
+  }
+}

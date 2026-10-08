@@ -1,0 +1,100 @@
+{
+  "about": "Wikimedia Commons Action API fixtures (formatversion=2) for the step 3 tests. Shapes follow MediaWiki core 560efe7b50d4073a7c02d91990ea5aec73fc3396 (identical API code to the deployed branch wmf/1.47.0-wmf.23, 838c378492f0dbb331b4e188917dc8953e8897b8): includes/Api/ApiQuery.php outputGeneralPageInfo, ApiQuerySearch.php, ApiPageSet.php, ApiQueryImageInfo.php getInfo, ApiContinuationManager.php, ApiMain.php checkMaxLag and substituteResultWithError, ApiErrorFormatter_BackCompat.php; includes/Media/FormatMetadata.php; extension CommonsMetadata 28eaa465bb1b406f90575e6b684c9365265b441e (TemplateParser, LicenseParser, DataCollector); Wikimedia production settings from operations/mediawiki-config ab324f326fd7df4213ce2500bbdf3fcdcbeb4988 ($wgThumbnailSteps, $wgTrackMediaRequestProvenance, $wgShowHostnames); edge responses from operations/puppet 135df70c1ea0fb023993c3c0b0ab80979af8d409. extmetadata values, hidden flags and HTML patterns copy real Commons responses captured in WordPress/openverse c815ba4942a3d53cb687d51121f7d44caec7b7e3 (catalog/tests/dags/providers/provider_api_scripts/resources/wikimedia). Upload paths use the real md5 hash layout. Page ids, users and files are synthetic; four of them are the same files as Commons-sourced records in ../openverse/search-rolex-submariner.json (curid 148213907, 150337412, 67324118, 118904562).",
+  "request_headers_expected": {
+    "User-Agent": "WatchCentroImageFinder/1.0 (+https://watchcentro.com)",
+    "note": "Any UA that contains an http(s) URL or an e-mail address counts as contact info at the Wikimedia edge (puppet modules/profile/files/cache/contact_info.lua). Without a User-Agent header the edge answers 403; the n8n default \"axios/<version>\" matches the library-default regex and is also answered 403 unless it carries contact info (edge-403-ua-policy.txt)."
+  },
+  "api_200_headers": {
+    "Content-Type": "application/json; charset=utf-8"
+  },
+  "fixtures": {
+    "search-rolex-submariner.json": {
+      "status": 200,
+      "headers": "api_200_headers",
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex Submariner filetype:bitmap&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "11 pages, no continue (fewer hits than gsrlimit), batchcomplete true. query.pages is in database order (binary title order, as ApiPageSet selects from `page` without ORDER BY); relevance order is the 'index' field (1-based, offset+position). Array order of index values: 5,10,3,11,1,2,4,6,8,9,7. iiurlwidth=1920 is a $wgThumbnailSteps step: files wider than 1920 get a /thumb/.../1920px- URL; narrower files get the ORIGINAL url as thumburl (utm_content=thumbnail_unscaled) while thumbwidth still reports the requested 1920 and thumbheight the matching upscaled height. Every url, thumburl and responsiveUrls value carries utm_source/utm_campaign/utm_content query parameters ($wgTrackMediaRequestProvenance, T414338); strip the query before using a URL as a dedupe key.",
+      "pages": {
+        "1": "File:Rolex Submariner Date 126610LN.jpg, pageid 148213907, CC BY-SA 4.0, 4032x3024, Artist User:Horologium42. Accept. Same file as Openverse result 1 (same curid, same upload path once the query string is removed): dedupe.",
+        "2": "File:Rolex Submariner Date 126610LN (53218846721).jpg, pageid 150337412, Flickr import, CC BY 2.0, 5472x3648, Artist = Flickr profile link \"chronoshots\". Accept. Same file as Openverse result 13.",
+        "3": "File:Rolex Submariner Date 116610LN Uhrenmesse 2014.jpg, CC BY-SA 3.0 de (License cc-by-sa-3.0-de, LicenseUrl .../3.0/de/deed.en), German-only ImageDescription, custom Attribution string with links. Accept.",
+        "4": "File:Rolex Submariner Sydney 2008.jpg, LicenseShortName GFDL, no License key (LicenseParser only maps CC and PD). Reject: licence.",
+        "5": "File:Rolex Submariner 16610 with box and papers.jpg, pageid 67324118, CC0 (Copyrighted is still \"True\"), Restrictions \"trademarked\". Accept, penalised for box/papers; do not reject on trademarked. Same file as Openverse result 11.",
+        "6": "File:Rolex Submariner small.jpg, CC BY-SA 3.0, 640x427 (thumbwidth says 1920). Reject: width < MIN_WIDTH. Artist is a red link to a user page.",
+        "7": "File:US Navy diver wearing Rolex Submariner 5513, 1972.jpg, Public domain (License pd, no LicenseUrl, AttributionRequired false), 1800x1350, ObjectName is {{Photograph}} HTML with a display:none \"label QS:\" div, Artist \"Unknown\". Accept.",
+        "8": "File:Rolex Submariner worn by model at Baselworld 2019.jpg, CC BY-SA 4.0, Restrictions \"personality|trademarked\". Reject: personality.",
+        "9": "File:Rolex crown logo (Submariner dial).png, Public domain, PNG 1200x700, Restrictions \"trademarked\". Reject: hard-exclude term logo.",
+        "10": "File:Rolex Submariner 1680 scan.tif, image/tiff (MEDIATYPE_BITMAP, so filetype:bitmap returns it), pagecount 1, thumb lossy-page1-1920px-...tif.jpg. Reject: extension/mime.",
+        "11": "File:Rolex Submariner Date 116610LV.jpg, pageid 118904562, CC BY 3.0, no Artist field at all. Accept only as \"Unknown author\" with landing_url, penalised. Same file as Openverse result 12 (creator null there)."
+      }
+    },
+    "search-rolex-watch-no-filetype.json": {
+      "status": 200,
+      "headers": "api_200_headers",
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex watch&gsrnamespace=6&gsrlimit=2&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "NOT a response to the recommended request: filetype:bitmap excludes MEDIATYPE_DRAWING, so SVGs never come back from it. Use only to unit-test the mime/extension filter and the vector thumb shape. 2 SVG pages (thumburl is a PNG render at 1920px; width/height are the SVG nominal size). Shows a continue block: {\"gsroffset\": 2, \"continue\": \"gsroffset||\"} with batchcomplete true. Page 2 is the same file as Openverse result 8 (curid 96530177)."
+    },
+    "search-empty.json": {
+      "status": 200,
+      "headers": "api_200_headers",
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex Submariner Zzyzx filetype:bitmap&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "No hits: no \"query\" key at all (ApiQuery::outputGeneralPageInfo only adds query.pages when count($pages) > 0; gsrinfo defaults to empty in generator mode, so no query.searchinfo)."
+    },
+    "error-maxlag.json": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "private, must-revalidate, max-age=0",
+        "MediaWiki-API-Error": "maxlag",
+        "Retry-After": "5",
+        "X-Database-Lag": "7"
+      },
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex Submariner filetype:bitmap&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "HTTP 200 (dieWithError without an HTTP code). Retry-After is max(maxlag, 5); X-Database-Lag is the integer lag. error carries host, lag (float), type from $lagInfo; info names the host because $wgShowHostnames is true in production; docref under \"docref\" (formatversion=1 puts it under \"*\"). servedby is forced on errors."
+    },
+    "error-generic.json": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "private, must-revalidate, max-age=0",
+        "MediaWiki-API-Error": "cirrussearch-backend-error"
+      },
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex Submariner filetype:bitmap&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "Search backend failure: CirrusSearch returns Status::newFatal(cirrussearch-backend-error), ApiQuerySearch calls dieStatus. Same envelope as every API error: {error:{code, info, docref}, servedby}, HTTP 200."
+    },
+    "error-urlparamnormal.json": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "MediaWiki-API-Error": "urlparamnormal"
+      },
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex Submariner filetype:bitmap&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "Caused by iiurlwidth itself: ApiQueryImageInfo::checkParameterNormalise dies for the whole request when one file in the result set cannot be normalised (source width <= 0, i.e. a broken upload). The file name in info is the DB key (underscores)."
+    },
+    "error-internal.json": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "application/json; charset=utf-8",
+        "MediaWiki-API-Error": "internal_api_error_DBQueryError"
+      },
+      "request": "GET /w/api.php?action=query&format=json&formatversion=2&generator=search&gsrsearch=Rolex Submariner filetype:bitmap&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size|mime|extmetadata&iiurlwidth=1920&iiextmetadatafilter=LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories&iiextmetadatalanguage=en&maxlag=5",
+      "notes": "Uncaught exception: code internal_api_error_<class without Wikimedia\\Rdbms\\>, errorclass, info \"[<request id>] Caught exception of type <class>\" ($wgShowExceptionDetails is false on commonswiki); no docref."
+    },
+    "edge-403-ua-policy.txt": {
+      "status": 403,
+      "headers": {
+        "Content-Type": "text/plain"
+      },
+      "request": "any request with no User-Agent, or a library-default User-Agent (python-requests, axios, java, go-, okhttp, guzzlehttp, ...) without contact info",
+      "notes": "Answered by the HAProxy TLS terminator before MediaWiki (puppet modules/profile/templates/cache/haproxy/tls_terminator.cfg.erb, http-request deny ... ua_policy_body). Not JSON."
+    },
+    "edge-429-bot-ratelimit.html": {
+      "status": 429,
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Retry-After": "11"
+      },
+      "request": "any request from a UA with contact info above 100 cache misses per 10 s per contact (text cluster, commons.wikimedia.org) or 10 per 10 s (upload.wikimedia.org)",
+      "notes": "Varnish synth error page (modules/varnish/templates/errorpage.inc.vcl.erb synth_errorpage + modules/mediawiki/templates/errorpage.html.erb). The reason string is the text-cluster bot limit message; host names, XID, date and IP are synthetic. Not JSON."
+    }
+  }
+}

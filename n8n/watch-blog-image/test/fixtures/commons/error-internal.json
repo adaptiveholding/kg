@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "internal_api_error_DBQueryError",
+    "info": "[1f0c2a7e-6b1d-4c35-9a3e-2d8f4b6c9e01] Caught exception of type Wikimedia\\Rdbms\\DBQueryError",
+    "errorclass": "Wikimedia\\Rdbms\\DBQueryError"
+  },
+  "servedby": "mw-api-ext.eqiad.main-7f9c6b8d5-x4k2p"
+}

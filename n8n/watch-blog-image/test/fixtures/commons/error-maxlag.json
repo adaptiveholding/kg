@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "maxlag",
+    "info": "Waiting for 10.64.48.35: 7.18 seconds lagged.",
+    "host": "10.64.48.35",
+    "lag": 7.18,
+    "type": "db",
+    "docref": "See https://commons.wikimedia.org/w/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/postorius/lists/mediawiki-api-announce.lists.wikimedia.org/&gt; for notice of API deprecations and breaking changes."
+  },
+  "servedby": "mw-api-ext.eqiad.main-7f9c6b8d5-x4k2p"
+}

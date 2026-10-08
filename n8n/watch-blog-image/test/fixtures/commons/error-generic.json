@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "cirrussearch-backend-error",
+    "info": "We could not complete your search due to a temporary problem. Please try again later.",
+    "docref": "See https://commons.wikimedia.org/w/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/postorius/lists/mediawiki-api-announce.lists.wikimedia.org/&gt; for notice of API deprecations and breaking changes."
+  },
+  "servedby": "mw-api-ext.codfw.main-6c5d7b9f4-r7tqn"
+}

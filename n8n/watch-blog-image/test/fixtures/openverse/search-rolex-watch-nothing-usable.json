@@ -1,0 +1,365 @@
+{
+  "result_count": 9,
+  "page_count": 1,
+  "page_size": 20,
+  "page": 1,
+  "results": [
+    {
+      "id": "84cf8ea9-2068-5c99-bc93-da10cdd51e8c",
+      "title": "Rolex logo",
+      "indexed_on": "2020-02-19T17:26:03.118254Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=34261092",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Rolex_logo.svg",
+      "creator": "Rolex SA",
+      "creator_url": null,
+      "license": "by-sa",
+      "license_version": "3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": "illustration",
+      "filesize": 9371,
+      "filetype": "svg",
+      "tags": [],
+      "attribution": "\"Rolex logo\" by Rolex SA is licensed under CC BY-SA 3.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/3.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 452,
+      "width": 800,
+      "thumbnail": "https://api.openverse.org/v1/images/84cf8ea9-2068-5c99-bc93-da10cdd51e8c/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/84cf8ea9-2068-5c99-bc93-da10cdd51e8c/",
+      "related_url": "https://api.openverse.org/v1/images/84cf8ea9-2068-5c99-bc93-da10cdd51e8c/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "3efa3ac3-1f6b-5481-98fe-69832d2751f3",
+      "title": "Replica Rolex watch",
+      "indexed_on": "2018-11-10T07:55:40.904338Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/58821903@N08/8743125512",
+      "url": "https://live.staticflickr.com/7290/8743125512_d13b7f20ce_b.jpg",
+      "creator": "Ben Travels",
+      "creator_url": "https://www.flickr.com/photos/58821903@N08",
+      "license": "by",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": null,
+      "filesize": null,
+      "filetype": null,
+      "tags": [
+        {
+          "name": "replica",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "fake",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "rolex",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"Replica Rolex watch\" by Ben Travels is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+      "fields_matched": [
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 768,
+      "width": 1024,
+      "thumbnail": "https://api.openverse.org/v1/images/3efa3ac3-1f6b-5481-98fe-69832d2751f3/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/3efa3ac3-1f6b-5481-98fe-69832d2751f3/",
+      "related_url": "https://api.openverse.org/v1/images/3efa3ac3-1f6b-5481-98fe-69832d2751f3/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "138e82d6-f7f2-59c0-a8f4-ab2fc7b87d5c",
+      "title": "Rolex watch",
+      "indexed_on": "2018-11-09T02:33:05.651097Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/35207114@N00/2931533804",
+      "url": "https://live.staticflickr.com/3046/2931533804_8be20c4d7a_m.jpg",
+      "creator": "tickstock",
+      "creator_url": "https://www.flickr.com/photos/35207114@N00",
+      "license": "by",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": null,
+      "filesize": null,
+      "filetype": null,
+      "tags": [
+        {
+          "name": "rolex",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"Rolex watch\" by tickstock is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+      "fields_matched": [
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 180,
+      "width": 240,
+      "thumbnail": "https://api.openverse.org/v1/images/138e82d6-f7f2-59c0-a8f4-ab2fc7b87d5c/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/138e82d6-f7f2-59c0-a8f4-ab2fc7b87d5c/",
+      "related_url": "https://api.openverse.org/v1/images/138e82d6-f7f2-59c0-a8f4-ab2fc7b87d5c/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "0c7ee54f-693b-5929-bb13-25774cbd6d83",
+      "title": "My Rolex watch",
+      "indexed_on": "2022-03-15T11:41:22.095410Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/96124058@N05/51877322610",
+      "url": "https://live.staticflickr.com/65535/51877322610_47c0e8a1f9_b.jpg",
+      "creator": "Marta K.",
+      "creator_url": "https://www.flickr.com/photos/96124058@N05",
+      "license": "by-sa",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": "photograph",
+      "filesize": null,
+      "filetype": "jpg",
+      "tags": [
+        {
+          "name": "rolex",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristshot",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"My Rolex watch\" by Marta K. is licensed under CC BY-SA 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/2.0/.",
+      "fields_matched": [
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 1024,
+      "width": 683,
+      "thumbnail": "https://api.openverse.org/v1/images/0c7ee54f-693b-5929-bb13-25774cbd6d83/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/0c7ee54f-693b-5929-bb13-25774cbd6d83/",
+      "related_url": "https://api.openverse.org/v1/images/0c7ee54f-693b-5929-bb13-25774cbd6d83/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "a5b9d2aa-5a6d-558f-8cf3-e064ca74b3a8",
+      "title": "Rolex watch shop window panorama",
+      "indexed_on": "2021-10-04T23:17:48.880119Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=101776234",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Rolex_watch_shop_window_panorama.jpg",
+      "creator": "Streetviewer",
+      "creator_url": "https://commons.wikimedia.org/wiki/User:Streetviewer",
+      "license": "by",
+      "license_version": "4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": null,
+      "filesize": 5120044,
+      "filetype": "jpg",
+      "tags": [],
+      "attribution": "\"Rolex watch shop window panorama\" by Streetviewer is licensed under CC BY 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 1400,
+      "width": 6000,
+      "thumbnail": "https://api.openverse.org/v1/images/a5b9d2aa-5a6d-558f-8cf3-e064ca74b3a8/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/a5b9d2aa-5a6d-558f-8cf3-e064ca74b3a8/",
+      "related_url": "https://api.openverse.org/v1/images/a5b9d2aa-5a6d-558f-8cf3-e064ca74b3a8/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "e9753da1-451b-5139-b80b-7c15542ca464",
+      "title": "Rolex watch hands animation.gif",
+      "indexed_on": "2021-02-08T10:44:31.725508Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=88412953",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Rolex_watch_hands_animation.gif",
+      "creator": "Animator77",
+      "creator_url": "https://commons.wikimedia.org/wiki/User:Animator77",
+      "license": "cc0",
+      "license_version": "1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": null,
+      "filesize": 884210,
+      "filetype": "gif",
+      "tags": [],
+      "attribution": "\"Rolex watch hands animation.gif\" by Animator77 is marked with CC0 1.0. To view the terms, visit https://creativecommons.org/publicdomain/zero/1.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 800,
+      "width": 1200,
+      "thumbnail": "https://api.openverse.org/v1/images/e9753da1-451b-5139-b80b-7c15542ca464/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/e9753da1-451b-5139-b80b-7c15542ca464/",
+      "related_url": "https://api.openverse.org/v1/images/e9753da1-451b-5139-b80b-7c15542ca464/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "06af0f63-e1c5-5422-9e63-599881c38c0d",
+      "title": "Rolex watch catalogue page, 1955.tif",
+      "indexed_on": "2020-11-30T06:02:59.317762Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=79120448",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/33/Rolex_watch_catalogue_page%2C_1955.tif",
+      "creator": "Unknown author",
+      "creator_url": null,
+      "license": "by",
+      "license_version": "4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": null,
+      "filesize": 23815302,
+      "filetype": "tiff",
+      "tags": [],
+      "attribution": "\"Rolex watch catalogue page, 1955.tif\" by Unknown author is licensed under CC BY 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/4.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 3300,
+      "width": 2400,
+      "thumbnail": "https://api.openverse.org/v1/images/06af0f63-e1c5-5422-9e63-599881c38c0d/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/06af0f63-e1c5-5422-9e63-599881c38c0d/",
+      "related_url": "https://api.openverse.org/v1/images/06af0f63-e1c5-5422-9e63-599881c38c0d/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "cd4a4e57-b78b-5cef-8263-d9b24adf6fd6",
+      "title": "Rolex watch",
+      "indexed_on": "2021-01-12T19:46:30.884203Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/70813226@N02/50662822914",
+      "url": "https://live.staticflickr.com/65535/50662822914_2b7e5c90da_b.jpg",
+      "creator": "nightlife_pics",
+      "creator_url": "https://www.flickr.com/photos/70813226@N02",
+      "license": "by",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": "photograph",
+      "filesize": null,
+      "filetype": "jpg",
+      "tags": [
+        {
+          "name": "rolex",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "party",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"Rolex watch\" by nightlife_pics is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+      "fields_matched": [
+        "tags.name",
+        "title"
+      ],
+      "mature": true,
+      "height": 683,
+      "width": 1024,
+      "thumbnail": "https://api.openverse.org/v1/images/cd4a4e57-b78b-5cef-8263-d9b24adf6fd6/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/cd4a4e57-b78b-5cef-8263-d9b24adf6fd6/",
+      "related_url": "https://api.openverse.org/v1/images/cd4a4e57-b78b-5cef-8263-d9b24adf6fd6/related/",
+      "unstable__sensitivity": [
+        "user_reported_sensitivity"
+      ]
+    },
+    {
+      "id": "e2d99296-d0dd-5421-877f-4b72d0ed4fe4",
+      "title": "Counterfeit Rolex watches seized by customs",
+      "indexed_on": "2023-04-09T22:55:19.442086Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/187361540@N04/52790480034",
+      "url": "https://live.staticflickr.com/65535/52790480034_c40a2e8f71_b.jpg",
+      "creator": "Open Watch Photos",
+      "creator_url": "https://www.flickr.com/photos/187361540@N04",
+      "license": "cc0",
+      "license_version": "1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": "photograph",
+      "filesize": null,
+      "filetype": "jpg",
+      "tags": [
+        {
+          "name": "counterfeit",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "rolex",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "customs",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"Counterfeit Rolex watches seized by customs\" by Open Watch Photos is marked with CC0 1.0. To view the terms, visit https://creativecommons.org/publicdomain/zero/1.0/.",
+      "fields_matched": [
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 683,
+      "width": 1024,
+      "thumbnail": "https://api.openverse.org/v1/images/e2d99296-d0dd-5421-877f-4b72d0ed4fe4/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/e2d99296-d0dd-5421-877f-4b72d0ed4fe4/",
+      "related_url": "https://api.openverse.org/v1/images/e2d99296-d0dd-5421-877f-4b72d0ed4fe4/related/",
+      "unstable__sensitivity": []
+    }
+  ]
+}

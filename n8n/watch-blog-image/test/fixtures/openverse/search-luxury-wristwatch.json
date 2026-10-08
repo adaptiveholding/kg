@@ -1,0 +1,254 @@
+{
+  "result_count": 5,
+  "page_count": 1,
+  "page_size": 20,
+  "page": 1,
+  "results": [
+    {
+      "id": "257ee03a-0c40-53ee-9ade-d0df7abffb89",
+      "title": "Luxury wristwatch",
+      "indexed_on": "2023-04-09T22:51:06.770215Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/187361540@N04/52790471203",
+      "url": "https://live.staticflickr.com/65535/52790471203_f2b8d16a0c_b.jpg",
+      "creator": "Open Watch Photos",
+      "creator_url": "https://www.flickr.com/photos/187361540@N04",
+      "license": "cc0",
+      "license_version": "1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": "photograph",
+      "filesize": null,
+      "filetype": "jpg",
+      "tags": [
+        {
+          "name": "luxury",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristwatch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "watch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "macro",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristwatch",
+          "accuracy": 0.98811,
+          "unstable__provider": "clarifai"
+        }
+      ],
+      "attribution": "\"Luxury wristwatch\" by Open Watch Photos is marked with CC0 1.0. To view the terms, visit https://creativecommons.org/publicdomain/zero/1.0/.",
+      "fields_matched": [
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 683,
+      "width": 1024,
+      "thumbnail": "https://api.openverse.org/v1/images/257ee03a-0c40-53ee-9ade-d0df7abffb89/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/257ee03a-0c40-53ee-9ade-d0df7abffb89/",
+      "related_url": "https://api.openverse.org/v1/images/257ee03a-0c40-53ee-9ade-d0df7abffb89/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "a6cad6a3-3c85-5728-83d0-fd871e432cfa",
+      "title": "Luxury automatic wristwatch, exhibition caseback",
+      "indexed_on": "2023-12-11T20:14:38.556092Z",
+      "foreign_landing_url": "https://commons.wikimedia.org/w/index.php?curid=139906215",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Luxury_automatic_wristwatch%2C_exhibition_caseback.jpg",
+      "creator": "Horologium42",
+      "creator_url": "https://commons.wikimedia.org/wiki/User:Horologium42",
+      "license": "by-sa",
+      "license_version": "4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "provider": "wikimedia",
+      "source": "wikimedia",
+      "category": null,
+      "filesize": 2948123,
+      "filetype": "jpg",
+      "tags": [],
+      "attribution": "\"Luxury automatic wristwatch, exhibition caseback\" by Horologium42 is licensed under CC BY-SA 4.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/4.0/.",
+      "fields_matched": [
+        "description",
+        "title"
+      ],
+      "mature": false,
+      "height": 2400,
+      "width": 3200,
+      "thumbnail": "https://api.openverse.org/v1/images/a6cad6a3-3c85-5728-83d0-fd871e432cfa/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/a6cad6a3-3c85-5728-83d0-fd871e432cfa/",
+      "related_url": "https://api.openverse.org/v1/images/a6cad6a3-3c85-5728-83d0-fd871e432cfa/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "8790deb1-4a72-5f54-abaf-e45e2246e6ce",
+      "title": "Vintage luxury wristwatch advertisement, 1962",
+      "indexed_on": "2019-06-22T13:09:51.381646Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/44124324682@N01/33480917148",
+      "url": "https://live.staticflickr.com/7880/33480917148_64ac1e9b03_b.jpg",
+      "creator": "Paper Ephemera",
+      "creator_url": "https://www.flickr.com/photos/44124324682@N01",
+      "license": "by",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": null,
+      "filesize": null,
+      "filetype": null,
+      "tags": [
+        {
+          "name": "advertisement",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "1962",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "luxury",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristwatch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "magazine",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"Vintage luxury wristwatch advertisement, 1962\" by Paper Ephemera is licensed under CC BY 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by/2.0/.",
+      "fields_matched": [
+        "description",
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 1024,
+      "width": 791,
+      "thumbnail": "https://api.openverse.org/v1/images/8790deb1-4a72-5f54-abaf-e45e2246e6ce/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/8790deb1-4a72-5f54-abaf-e45e2246e6ce/",
+      "related_url": "https://api.openverse.org/v1/images/8790deb1-4a72-5f54-abaf-e45e2246e6ce/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "e6f9c60d-87a3-5a1e-827f-a1dbdbf98cc9",
+      "title": "Luxury wristwatch on wrist",
+      "indexed_on": "2022-03-15T11:39:47.208835Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/96124058@N05/51877310987",
+      "url": "https://live.staticflickr.com/65535/51877310987_a91d3e06b5_b.jpg",
+      "creator": "Marta K.",
+      "creator_url": "https://www.flickr.com/photos/96124058@N05",
+      "license": "by-sa",
+      "license_version": "2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": "photograph",
+      "filesize": null,
+      "filetype": "jpg",
+      "tags": [
+        {
+          "name": "luxury",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristwatch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristshot",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"Luxury wristwatch on wrist\" by Marta K. is licensed under CC BY-SA 2.0. To view a copy of this license, visit https://creativecommons.org/licenses/by-sa/2.0/.",
+      "fields_matched": [
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 1024,
+      "width": 768,
+      "thumbnail": "https://api.openverse.org/v1/images/e6f9c60d-87a3-5a1e-827f-a1dbdbf98cc9/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/e6f9c60d-87a3-5a1e-827f-a1dbdbf98cc9/",
+      "related_url": "https://api.openverse.org/v1/images/e6f9c60d-87a3-5a1e-827f-a1dbdbf98cc9/related/",
+      "unstable__sensitivity": []
+    },
+    {
+      "id": "20a26494-94d6-5605-8891-8d3e669b69f4",
+      "title": "Luxury wristwatch display at a jewellery store",
+      "indexed_on": "2020-01-27T08:09:12.604471Z",
+      "foreign_landing_url": "https://www.flickr.com/photos/28734918@N03/49012250182",
+      "url": "https://live.staticflickr.com/65535/49012250182_7e3b0d5c21_b.jpg",
+      "creator": "Maritime Heritage Archive",
+      "creator_url": "https://www.flickr.com/photos/28734918@N03",
+      "license": "pdm",
+      "license_version": "1.0",
+      "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "provider": "flickr",
+      "source": "flickr",
+      "category": null,
+      "filesize": null,
+      "filetype": null,
+      "tags": [
+        {
+          "name": "luxury",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "wristwatch",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "store",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "display",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        },
+        {
+          "name": "jewellery",
+          "accuracy": null,
+          "unstable__provider": "flickr"
+        }
+      ],
+      "attribution": "\"Luxury wristwatch display at a jewellery store\" by Maritime Heritage Archive is marked with Public Domain Mark 1.0. To view the terms, visit https://creativecommons.org/publicdomain/mark/1.0/.",
+      "fields_matched": [
+        "description",
+        "tags.name",
+        "title"
+      ],
+      "mature": false,
+      "height": 768,
+      "width": 1024,
+      "thumbnail": "https://api.openverse.org/v1/images/20a26494-94d6-5605-8891-8d3e669b69f4/thumb/",
+      "detail_url": "https://api.openverse.org/v1/images/20a26494-94d6-5605-8891-8d3e669b69f4/",
+      "related_url": "https://api.openverse.org/v1/images/20a26494-94d6-5605-8891-8d3e669b69f4/related/",
+      "unstable__sensitivity": []
+    }
+  ]
+}
