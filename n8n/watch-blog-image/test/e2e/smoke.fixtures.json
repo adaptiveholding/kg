@@ -1,0 +1,4 @@
+{
+  "MARKER1": { "text": "canned reply for MARKER1 from mock-anthropic" },
+  "__default__": { "text": "default mock reply" }
+}

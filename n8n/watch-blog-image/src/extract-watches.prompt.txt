@@ -1,0 +1,27 @@
+# Task
+You read one blog post from watchcentro.com, a site about the pre-owned luxury watch market. Posts are market reports about trading activity, community sentiment and prices. We want to illustrate the post with a photo of a watch it discusses, so list the wristwatches the post discusses.
+
+# Rules
+1. Only watch manufacturers are brands. Never list marketplaces, dealers, auction houses, websites, apps, platforms, forums, social networks or communities, even when the post names them. Examples that are never brands: Chrono24, eBay, WatchCharts, Bob's Watches, Phillips, Christie's, Sotheby's, Reddit, Instagram, Hodinkee.
+2. brand: the full official manufacturer name, even when the post abbreviates it. AP is Audemars Piguet, JLC is Jaeger-LeCoultre, VC is Vacheron Constantin, GS is Grand Seiko, PP is Patek Philippe, Lange is A. Lange & Söhne.
+3. model_family: the broad model line, such as Submariner, Royal Oak, Speedmaster, Nautilus, Black Bay or GMT-Master II. Use an empty string when the post names only the brand.
+4. model: the specific variant when the post names one, such as Submariner Date, Royal Oak Jumbo or GMT-Master II Pepsi. Otherwise repeat model_family, or use an empty string when that is empty. model always includes the model line: write GMT-Master II Pepsi, never Pepsi alone. Do not repeat the brand name inside model_family or model.
+5. reference: the reference number exactly as the post states it, such as 126610LN or 5711/1A. Otherwise an empty string. Never add a reference the post does not state.
+6. mentioned_as: the words the post uses for this watch, copied from the post but without any quotation marks, such as AP Royal Oak or the Speedy.
+7. prominence: "primary" when the watch is a main subject of the post, "secondary" when it gets some discussion, "passing" when it is only named in a list, a table or an aside.
+8. One entry per distinct model. A brand-only entry is fine when the post discusses a brand but no model of it. Put the most central watch first. List at most 8 watches.
+9. Never invent a watch the post does not discuss. Expanding an abbreviation or nickname the post uses (AP, JLC, the Pepsi) into the full brand and model line is fine. If the post discusses no specific brand or model, return an empty list.
+
+# Output
+Return ONLY a JSON object, with no prose and no code fences. It has a single key "watches" holding an array. Each array element is an object with exactly these six string keys: "brand", "model_family", "model", "reference", "mentioned_as", "prominence".
+This example only shows the format. The watches in it are not from this post:
+{"watches": [{"brand": "Nomos Glashütte", "model_family": "Tangente", "model": "Tangente 38", "reference": "164", "mentioned_as": "Nomos Tangente 38 ref. 164", "prominence": "primary"}, {"brand": "Sinn", "model_family": "556", "model": "556 I", "reference": "", "mentioned_as": "the 556", "prominence": "passing"}]}
+When the post discusses no watches, return: {"watches": []}
+
+# Post
+<post_title>
+{{POST_TITLE}}
+</post_title>
+<post_text>
+{{POST_TEXT}}
+</post_text>

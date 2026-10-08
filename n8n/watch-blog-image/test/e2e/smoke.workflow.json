@@ -1,0 +1,74 @@
+{
+  "name": "E2E smoke: chainLlm + mock Anthropic",
+  "nodes": [
+    {
+      "id": "0b6f6f0e-5a8e-4c1e-9d3e-000000000001",
+      "name": "Manual trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "0b6f6f0e-5a8e-4c1e-9d3e-000000000002",
+      "name": "Emit text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "return [{ json: { t: 'hello MARKER1' } }];"
+      }
+    },
+    {
+      "id": "0b6f6f0e-5a8e-4c1e-9d3e-000000000003",
+      "name": "Smoke chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [440, 0],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.t }}"
+      }
+    },
+    {
+      "id": "0b6f6f0e-5a8e-4c1e-9d3e-000000000004",
+      "name": "Smoke model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [440, 220],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-haiku-5-5",
+          "cachedResultName": "Claude Haiku 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 1000
+        }
+      },
+      "credentials": {
+        "anthropicApi": {
+          "id": "Fy3gBIA4bOXd96pw",
+          "name": "Anthropic account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual trigger": {
+      "main": [[{ "node": "Emit text", "type": "main", "index": 0 }]]
+    },
+    "Emit text": {
+      "main": [[{ "node": "Smoke chain", "type": "main", "index": 0 }]]
+    },
+    "Smoke model": {
+      "ai_languageModel": [[{ "node": "Smoke chain", "type": "ai_languageModel", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "pinData": {}
+}
