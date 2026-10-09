@@ -84,7 +84,7 @@
         660
       ],
       "parameters": {
-        "content": "## Image finder (step 2): watch search queries\n\n**Input:** the one item from **Render WP blocks** (title, slug, excerpt, content, seo_title, ...).\n\n**Flow:** *prep post text* turns the block HTML into plain text -> *extract watches* (Claude Haiku, thinking off) lists the watches the post discusses -> *build queries* drops marketplaces and watches not in the post (a model it cannot find is kept as brand only), then orders up to 6 image search queries (most specific first, one slot kept for the main brand) and always adds \"luxury wristwatch\" last.\n\n**Output:** `{source, post_title, watches[], image_queries[{q, level, brand, model_family, model, reference, prominence, watch_index}], dropped_watches[], dropped_queries, extract_error}`. `source` is the untouched Render WP blocks item.\n\n**Placement:** do NOT put it inline yet (*WordPress: create draft* reads `$json.title` etc.). To try it on real runs, add a second link from *Render WP blocks* to *prep post text* and keep these nodes BELOW the main row, so the draft branch runs first. Pasting drops the nodes where you last clicked; the JSON positions only hold for a direct JSON merge. An LLM error never stops the run: you get the generic query and `extract_error` is set.",
+        "content": "## Image finder (step 2): watch search queries\n\n**Input:** the one item from **Render WP blocks** (title, slug, excerpt, content, seo_title, ...).\n\n**Flow:** *prep post text* turns the block HTML into plain text -> *extract watches* (Claude Haiku, thinking off) lists the watches the post discusses -> *build queries* drops marketplaces and watches not in the post (a model it cannot find is kept as brand only), then orders up to 6 image search queries (most specific first, one slot kept for the main brand) and always adds \"luxury wristwatch\" last.\n\n**Output:** `{source, post_title, watches[], image_queries[{q, level, brand, model_family, model, reference, prominence, watch_index}], dropped_watches[], dropped_queries, extract_error}`. `source` is the untouched Render WP blocks item.\n\n**Placement:** first node of the image chain, on the LIVE branch only: *Live mode?* (true) -> *prep post text*; the chain ends at *Image: hand back post* -> *WordPress: create draft* (see the steps 4-6 note). Test runs never reach it. An LLM error never stops the run: you get the generic query and `extract_error` is set (and step 4 then uses no photo).",
         "height": 340,
         "width": 960
       }
@@ -265,9 +265,368 @@
         660
       ],
       "parameters": {
-        "content": "## Image finder (step 3): search and pick a photo\n\n**Flow:** *split queries* makes one item per image query -> *search Openverse* (licences CC BY, BY-SA, CC0, PDM only; 20 results; one request every 3.5 s) -> *search Commons* (same query, bitmap files only; one request per second) -> *pick photo* drops anything that is not CC0, public domain, CC BY or CC BY-SA, smaller than 1000 px, the wrong shape or file type, a replica, a logo, another brand's watch, a non-watch subject, or a copy of a photo the other source rejected, then takes the best photo of the most specific query that has one.\n\n**Output (one item per post):** `{source, post_title, watches, image_queries, image, image_error, alternates, search_log}`. `image` has file_url, landing_url, licence, creator, alt_text, credit_text, download_filename. When nothing passes, `image` is null and `image_error` says why. A 429, a timeout or an API error never stops the run; it shows in `search_log`.\n\n**Optional, higher Openverse limits:** register a free app (README, \"Openverse registration\"), click the e-mailed link, then Credentials > Create > **OAuth2 API**: Grant Type *Client Credentials*, Access Token URL `https://api.openverse.org/v1/auth_tokens/token/`, Client ID and Secret from the registration, Scope empty, Authentication *Body*. In *search Openverse* set Authentication *Generic Credential Type* > *OAuth2 API* > that credential; the batch interval can then go down to 700 ms.\n\n**Placement:** same as step 2 (not inline yet). Recently used photos (static data `imageFinder.recent`) score -40, but this node only READS that list: step 5 adds a photo on the live branch once it is really used (`image.recent_keys`).",
+        "content": "## Image finder (step 3): search and pick a photo\n\n**Flow:** *split queries* makes one item per image query -> *search Openverse* (licences CC BY, BY-SA, CC0, PDM only; 20 results; one request every 3.5 s) -> *search Commons* (same query, bitmap files only; one request per second) -> *pick photo* drops anything that is not CC0, public domain, CC BY or CC BY-SA, smaller than 1000 px, the wrong shape or file type, a replica, a logo, another brand's watch, a non-watch subject, or a copy of a photo the other source rejected, then takes the best photo of the most specific query that has one.\n\n**Output (one item per post):** `{source, post_title, watches, image_queries, image, image_error, alternates, search_log}`. `image` has file_url, landing_url, licence, creator, alt_text, credit_text, download_filename. When nothing passes, `image` is null and `image_error` says why. A 429, a timeout or an API error never stops the run; it shows in `search_log`.\n\n**Optional, higher Openverse limits:** register a free app (README, \"Openverse registration\"), click the e-mailed link, then Credentials > Create > **OAuth2 API**: Grant Type *Client Credentials*, Access Token URL `https://api.openverse.org/v1/auth_tokens/token/`, Client ID and Secret from the registration, Scope empty, Authentication *Body*. In *search Openverse* set Authentication *Generic Credential Type* > *OAuth2 API* > that credential; the batch interval can then go down to 700 ms.\n\n**Placement:** inside the live-branch image chain (see the steps 4-6 note). Recently used photos (static data `imageFinder.recent`) score -40; this node only READS that list, *Image: hand back post* adds a photo once it is attached (`image.recent_keys`).",
         "height": 340,
         "width": 780
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f01",
+      "name": "Image: plan licence check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4300,
+        1040
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Image finder, step 4a: decide whether the picked photo needs a licence lookup on Wikimedia Commons.\n// Openverse indexes Commons, but its copy of a Commons file does not carry the file's Restrictions, NonFree flag or\n// licence reviews. Such a row (\"Wikimedia-sourced Openverse pick\") is confirmed against Commons before it is used:\n//   - by a Commons search result of the same page in this run (Image: search Commons), when there is one;\n//   - otherwise by ONE imageinfo lookup (Image: look up licence on Commons) for the page ids listed here.\n// Candidates are the picked image, then its alternates, in order. Ids are collected up to the first candidate\n// that needs no lookup (a Commons pick, a non-Wikimedia Openverse row, or a row whose page this run's search\n// already returned), because \"Image: confirm licence\" uses the first candidate that passes.\n// Also: when the watch extraction failed and no watch is known (an Anthropic error, for example), the photo is\n// dropped here (see USE_PHOTO_WITHOUT_WATCHES), so nothing is looked up, downloaded or uploaded.\n// Output, one item per input item: the pick item plus\n//   extract_error: from Image: build queries ('' on success)\n//   licence_check: {lookup_pageids: ['148213907', ...], candidates: [{provider, id, pageid, check}], search_pages: {pageid: page}}\n// check: 'not needed' | 'search' (page found in this run's search) | 'lookup' | 'no page id'. Nothing here throws.\n\n// --- Config ---------------------------------------------------------------------------------------\n// Use a photo picked from the generic query when step 2 could not read the post's watches (extract_error set and\n// no watches)? false: the post gets no image, which keeps an LLM outage from putting a random wristwatch on a post.\nconst USE_PHOTO_WITHOUT_WATCHES = false;\n\nconst isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);\nconst curidOf = u => { const m = String(u || '').match(/commons\\.wikimedia\\.org\\/w\\/index\\.php\\?(?:[^#]*&)?curid=(\\d+)/i); return m ? m[1] : ''; };\nconst hostOf = u => ((String(u || '').match(/^https?:\\/\\/([^/?#]+)/i) || [])[1] || '').toLowerCase();\n\n// An Openverse row whose file lives on Wikimedia Commons.\nfunction isWikimediaRow(c) {\n  if (!isObj(c) || c.provider !== 'openverse') return false;\n  return c.source_name === 'Wikimedia Commons' || hostOf(c.file_url) === 'upload.wikimedia.org' || curidOf(c.landing_url) !== '';\n}\n\n// Pages of a Commons API answer (formatversion 2 list or 1 object; plain or neverError/fullResponse item).\nfunction pagesOf(json) {\n  if (!isObj(json)) return [];\n  let body = json;\n  if (Number.isInteger(json.statusCode) && ('body' in json || 'data' in json)) {\n    body = 'body' in json ? json.body : json.data;\n    if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { return []; } }\n  }\n  if (!isObj(body) || !isObj(body.query) || !body.query.pages || typeof body.query.pages !== 'object') return [];\n  const pages = Array.isArray(body.query.pages) ? body.query.pages : Object.values(body.query.pages);\n  return pages.filter(p => isObj(p));\n}\nconst hasFileInfo = p => isObj(p) && Array.isArray(p.imageinfo) && isObj(p.imageinfo[0]);\n\nfunction nodeItems(read) {\n  try { const a = read(); return Array.isArray(a) ? a : null; } catch (e) { return null; }\n}\n\nfunction plan(pick, searchPages) {\n  const candidates = [pick.image].concat(Array.isArray(pick.alternates) ? pick.alternates : []).filter(isObj);\n  const out = { lookup_pageids: [], candidates: [], search_pages: {} };\n  let settled = false;\n  for (const c of candidates) {\n    const entry = { provider: String(c.provider || ''), id: String(c.id ?? ''), pageid: '', check: 'not needed' };\n    out.candidates.push(entry);\n    if (!isWikimediaRow(c)) { settled = true; break; }\n    entry.pageid = curidOf(c.landing_url);\n    if (!entry.pageid) { entry.check = 'no page id'; continue; }\n    const page = searchPages.get(entry.pageid);\n    if (page) {\n      entry.check = 'search';\n      out.search_pages[entry.pageid] = page;\n      settled = true;\n      break;\n    }\n    entry.check = 'lookup';\n    if (!out.lookup_pageids.includes(entry.pageid)) out.lookup_pageids.push(entry.pageid);\n  }\n  out.settled = settled;\n  return out;\n}\n\nconst items = $input.all();\nconst posts = nodeItems(() => $('Image: build queries').all()) || [];\n// Commons pages returned by this run's searches, by page id (only pages that carry file info).\nconst searchPages = new Map();\ntry {\n  for (const it of nodeItems(() => $('Image: search Commons').all()) || []) {\n    for (const p of pagesOf(it && it.json)) {\n      const id = p.pageid === undefined || p.pageid === null ? '' : String(p.pageid);\n      if (id && hasFileInfo(p) && !searchPages.has(id)) searchPages.set(id, p);\n    }\n  }\n} catch (e) { /* no search data: every Wikimedia row is looked up */ }\n\nconst result = [];\nitems.forEach((item, i) => {\n  const pick = item && isObj(item.json) ? item.json : {};\n  let json;\n  try {\n    const post = posts.length === items.length && posts[i] && isObj(posts[i].json) ? posts[i].json\n      : (posts.length === 1 && posts[0] && isObj(posts[0].json) ? posts[0].json : {});\n    const extract_error = typeof post.extract_error === 'string' ? post.extract_error : '';\n    const watches = Array.isArray(pick.watches) ? pick.watches : [];\n    json = { ...pick, extract_error };\n    if (pick.image && extract_error && !watches.length && !USE_PHOTO_WITHOUT_WATCHES) {\n      json.image = null;\n      json.alternates = [];\n      json.image_error = 'watch extraction failed (' + extract_error.slice(0, 200) + '), so no photo is used';\n    }\n    json.licence_check = plan(json, searchPages);\n  } catch (e) {\n    json = {\n      ...pick, image: null, alternates: [],\n      image_error: 'licence check failed: ' + String(e && e.message ? e.message : e).slice(0, 200),\n      licence_check: { lookup_pageids: [], candidates: [], search_pages: {}, settled: false },\n    };\n  }\n  result.push({ json, pairedItem: { item: i } });\n});\nreturn result;"
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f02",
+      "name": "Image: needs Commons lookup?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4520,
+        1040
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Image: needs Commons lookup?",
+              "leftValue": "={{ Array.isArray($json.licence_check && $json.licence_check.lookup_pageids) && $json.licence_check.lookup_pageids.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f03",
+      "name": "Image: look up licence on Commons",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4740,
+        880
+      ],
+      "parameters": {
+        "url": "https://commons.wikimedia.org/w/api.php",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "query"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "formatversion",
+              "value": "2"
+            },
+            {
+              "name": "pageids",
+              "value": "={{ $json.licence_check.lookup_pageids.slice(0, 50).join('|') }}"
+            },
+            {
+              "name": "prop",
+              "value": "imageinfo"
+            },
+            {
+              "name": "iiprop",
+              "value": "url|size|mime|extmetadata"
+            },
+            {
+              "name": "iiextmetadatafilter",
+              "value": "LicenseShortName|License|LicenseUrl|UsageTerms|AttributionRequired|Copyrighted|Restrictions|Artist|Credit|ObjectName|ImageDescription|Attribution|NonFree|Categories"
+            },
+            {
+              "name": "iiextmetadatalanguage",
+              "value": "en"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "WatchCentroImageFinder/1.0 (+https://watchcentro.com)"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f04",
+      "name": "Image: confirm licence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4960,
+        1040
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Image finder, step 4b: confirm the licence of a Wikimedia-sourced Openverse pick on Commons, then fix the photo.\n// Input: one item per post, either the \"Image: plan licence check\" item itself (no lookup was needed) or the\n// answer of \"Image: look up licence on Commons\" (the plan item is then read through pairedItem).\n// The picked image and its alternates are tried in order. A Commons pick or a non-Wikimedia Openverse row is used\n// as it is (step 3 checked it). A Wikimedia-sourced Openverse row is used only when its Commons page (from this\n// run's search, else from the lookup) passes the step 3 rules again: licence CC0 / public domain / CC BY /\n// CC BY-SA, no NC/ND, not NonFree, licence fields that agree, no public domain logo or shape, no \"personality\"\n// restriction, and the page must show the same file. Its licence and creator are then taken from Commons (the\n// licensor's requested credit wins, as in step 3) and credit_text is rebuilt. Rows that cannot be confirmed are\n// skipped; when none is left the post gets no image.\n// Output, one item per input item: {source, post_title, watches, image_queries, image, image_error, alternates,\n// search_log, extract_error, licence_check: {status, lookup, checked}, media_update}. media_update is the JSON body\n// of \"Image: set alt text and caption\": {alt_text, caption, title, description}. Nothing here throws.\n\nconst isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);\nconst PHOTO_EXTENSIONS = ['jpg', 'png', 'webp'];\n\n// --- Copied verbatim from pick-photo.js (the step 3 rules; a unit test keeps the copies identical) ------------\nconst REJECT_RESTRICTIONS = ['personality'];\nconst REJECT_COMMONS_LICENSE = /^pd-(textlogo|logo|shape|trivial|ineligible)/i;\nconst str = v => (typeof v === 'string' ? v.replace(/\\s+/g, ' ').trim() : (typeof v === 'number' ? String(v) : ''));\nconst norm = s => String(s ?? '').replace(/ß/g, 'ss').replace(/[øØ]/g, 'o').replace(/[æÆ]/g, 'ae')\n  .replace(/[œŒ]/g, 'oe').replace(/[łŁ]/g, 'l').normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase()\n  .replace(/[^a-z0-9]+/g, ' ').trim();\nconst ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\", nbsp: ' ' };\nfunction decodeEntities(s) {\n  return String(s).replace(/&(#x[0-9a-f]+|#\\d+|[a-z]+);/gi, (m, e) => {\n    if (e[0] === '#') {\n      const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10);\n      return Number.isFinite(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;\n    }\n    const v = ENTITIES[e.toLowerCase()];\n    return v === undefined ? m : v;\n  });\n}\nfunction htmlText(s) {\n  if (s === null || s === undefined || typeof s === 'object') return '';\n  let t = String(s).slice(0, 6000);\n  t = t.replace(/<(div|span)\\b[^>]*display\\s*:\\s*none[^>]*>[\\s\\S]*?<\\/\\1>/gi, ' ');\n  t = t.replace(/<br\\s*\\/?>/gi, ' ').replace(/<[^>]*>/g, ' ');\n  return decodeEntities(t).replace(/\\s+/g, ' ').trim();\n}\nfunction plain(s, max) {\n  let t = String(s ?? '').replace(/\\b(?:https?:\\/\\/|www\\.)\\S+/gi, ' ').replace(/[\\u2012-\\u2015\\u2212]/g, '-')\n    .replace(/[\"\\u201c\\u201d\\u201e]/g, \"'\").replace(/[\\u0000-\\u001f\\u007f]/g, ' ').replace(/\\s+/g, ' ').trim();\n  if (max && t.length > max) t = t.slice(0, max - 3).replace(/\\s+\\S*$/, '') + '...';\n  return t;\n}\nconst isHttp = u => typeof u === 'string' && /^https?:\\/\\/[^\\s/]+/i.test(u.trim());\nconst absUrl = u => {\n  const s = decodeEntities(String(u || '').trim());\n  if (s.startsWith('//')) return 'https:' + s;\n  if (s.startsWith('/wiki/') || s.startsWith('/w/')) return 'https://commons.wikimedia.org' + s;\n  return s;\n};\nfunction safeDecode(s) { try { return decodeURIComponent(s); } catch (e) { return s; } }\nfunction normUrl(u) {\n  const m = String(u || '').trim().match(/^(?:[a-z]+:)?\\/\\/(?:www\\.)?([^/?#]+)([^?#]*)/i);\n  if (!m) return '';\n  let path = safeDecode(m[2]).replace(/\\/+$/, '');\n  const host = m[1].toLowerCase();\n  if (host === 'upload.wikimedia.org') {\n    const t = path.match(/^(\\/[^/]+\\/[^/]+)\\/thumb(\\/[0-9a-f]\\/[0-9a-f]{2}\\/[^/]+)\\/[^/]+$/i);\n    if (t) path = t[1] + t[2];\n  }\n  return (host + path).toLowerCase();\n}\nfunction parseLicenseName(raw) {\n  const s = String(raw ?? '').toLowerCase().replace(/_/g, ' ').replace(/\\s+/g, ' ').trim();\n  if (!s) return null;\n  if (/^public domain mark\\b/.test(s) || /^pdm\\b/.test(s)) return { code: 'pdm', version: '1.0', jur: '' };\n  if (s === 'pd' || /^pd[- ]/.test(s) || /^public domain\\b/.test(s)) return { code: 'pd', version: '', jur: '' };\n  const t = s.split(/[\\s,;/-]+/).filter(Boolean);\n  if (t.some(x => ['nc', 'nd', 'noncommercial', 'noderivs', 'noderivatives'].includes(x))) return { code: 'ncnd', version: '', jur: '' };\n  if (t[0] === 'cc0' || (t[0] === 'cc' && (t[1] === 'zero' || t[1] === '0'))) return { code: 'cc0', version: '1.0', jur: '' };\n  if (t[0] === 'cc' && t[1] === 'pd') return { code: 'pd', version: '', jur: '' };\n  if (t[0] !== 'cc') return { code: 'other', version: '', jur: '' };\n  let i = 1;\n  const attrs = [];\n  while (i < t.length && (t[i] === 'by' || t[i] === 'sa')) attrs.push(t[i++]);\n  const code = attrs.join('-');\n  if (code !== 'by' && code !== 'by-sa') return { code: 'other', version: '', jur: '' };\n  if (i < t.length && !/^\\d+(\\.\\d+)*$/.test(t[i]) && !/^([a-z]{2}|igo|scotland)$/.test(t[i])) return { code: 'other', version: '', jur: '' };\n  let version = '';\n  while (i < t.length && /^\\d+(\\.\\d+)*$/.test(t[i])) { if (!version) version = t[i]; i++; } // \"3.0-2.5-2.0-1.0\" -> 3.0\n  const jur = i < t.length && /^([a-z]{2}|igo|scotland)$/.test(t[i]) ? t[i] : '';\n  return { code, version, jur };\n}\nfunction parseLicenseUrl(raw) {\n  const u = String(raw ?? '').trim().toLowerCase();\n  if (!u) return null;\n  const m = u.match(/creativecommons\\.org\\/(licenses|publicdomain)\\/([a-z0-9+-]+)(?:\\/(\\d+(?:\\.\\d+)*))?(?:\\/([a-z]{2,8}))?(?=[/?#]|$)/);\n  if (!m) return { code: 'noncc', version: '', jur: '' };\n  const jur = m[4] && !['deed', 'legalcode'].includes(m[4]) ? m[4] : '';\n  if (m[1] === 'publicdomain') return { code: m[2] === 'zero' ? 'cc0' : (m[2] === 'mark' ? 'pdm' : 'pd'), version: m[3] || '', jur: '' };\n  const parts = m[2].split('-');\n  if (parts.some(x => x === 'nc' || x === 'nd')) return { code: 'ncnd', version: m[3] || '', jur };\n  if (m[2] === 'cc0') return { code: 'cc0', version: m[3] || '1.0', jur: '' };\n  if (m[2] === 'by' || m[2] === 'by-sa') return { code: m[2], version: m[3] || '', jur };\n  return { code: 'other', version: m[3] || '', jur };\n}\nconst family = l => (l.code === 'pd' || l.code === 'pdm' ? 'pd' : l.code);\nconst ALLOWED_CODES = ['by', 'by-sa', 'cc0', 'pd', 'pdm'];\nconst jurLabel = j => (j === 'scotland' ? 'Scotland' : j.toUpperCase());\nfunction licenseFields(l, givenUrl) {\n  const url = isHttp(givenUrl) ? givenUrl.trim() : '';\n  if (l.code === 'cc0') return { license: 'cc0', license_version: '1.0', license_name: 'CC0 1.0', license_url: url || 'https://creativecommons.org/publicdomain/zero/1.0/' };\n  if (l.code === 'pdm') return { license: 'pdm', license_version: '1.0', license_name: 'Public Domain Mark 1.0', license_url: url || 'https://creativecommons.org/publicdomain/mark/1.0/' };\n  if (l.code === 'pd') return { license: 'pdm', license_version: '', license_name: 'Public domain', license_url: url };\n  const label = l.code === 'by' ? 'CC BY' : 'CC BY-SA';\n  const name = [label, l.version, l.jur ? jurLabel(l.jur) : ''].filter(Boolean).join(' ');\n  const built = l.version ? `https://creativecommons.org/licenses/${l.code}/${l.version}/${l.jur ? l.jur + '/' : ''}` : '';\n  return { license: l.code, license_version: l.version, license_name: name, license_url: url || built };\n}\nfunction decideLicense(names, url, usageTerms, nonFree) {\n  const parsed = names.map(parseLicenseName).filter(Boolean);\n  const fromUrl = parseLicenseUrl(url);\n  const all = fromUrl ? parsed.concat([fromUrl]) : parsed;\n  if (!parsed.length) return { reject: 'licence', detail: 'licence unknown' };\n  if (all.some(l => l.code === 'ncnd') || /non-?commercial|no-?deriv/i.test(String(usageTerms || ''))) return { reject: 'licence', detail: 'licence NC/ND' };\n  if (/^(true|1|yes)$/i.test(String(nonFree ?? '').trim())) return { reject: 'licence', detail: 'non-free file' };\n  const lic = parsed[0];\n  if (!ALLOWED_CODES.includes(lic.code)) return { reject: 'licence', detail: 'licence not allowed' };\n  if (parsed.some(l => family(l) !== family(lic))) return { reject: 'licence', detail: 'licence fields disagree' };\n  if (fromUrl) {\n    if (fromUrl.code === 'noncc' ? lic.code !== 'pd' : family(fromUrl) !== family(lic)) return { reject: 'licence', detail: 'licence URL disagrees' };\n  }\n  const merged = { code: lic.code, version: lic.version || (fromUrl && fromUrl.version) || '', jur: lic.jur || (fromUrl && fromUrl.jur) || '' };\n  if (merged.code === 'by' || merged.code === 'by-sa') {\n    const other = parsed.find(l => l.version);\n    if (!merged.version && other) merged.version = other.version;\n    if (!merged.jur) { const j = parsed.find(l => l.jur); if (j) merged.jur = j.jur; }\n  }\n  return { lic: merged };\n}\nconst UNKNOWN_CREATOR = new RegExp('^(unknown( author| photographer| artist)?|author unknown|anonymous|anonym[eo]?|anonimo|' +\n  'anon\\\\.?|unbekannte?r?( (autor|fotograf|urheber))?|(auteur |photographe )?inconnue?|(autor |fotografo )?desconocido|' +\n  '(autore |fotografo )?sconosciuto|onbekend|okand|nieznany|not provided|n\\\\/?a|none|-+|\\\\?+)$', 'i');\nfunction cleanCreator(s) {\n  let t = htmlText(s);\n  const m = t.match(/^The original uploader was (.+?) at (.+?)\\.?$/i);\n  if (m) t = `${m[1]} at ${m[2]}`;\n  if (!t || UNKNOWN_CREATOR.test(norm(t)) || UNKNOWN_CREATOR.test(t) || /lacking author information/i.test(t)) return '';\n  return plain(t, 120);\n}\nfunction requestedCredit(html) {\n  let t = htmlText(html).replace(/^(?:©|\\(c\\)|copyright)\\s*/i, '');\n  t = t.replace(/^(?:photo(?:graph)?|foto(?:grafie)?|image|picture|bild|credit)s?\\s*(?::\\s*|by\\s+|von\\s+|de\\s+)(?:by\\s+)?/i, '');\n  const parts = t.split(/\\s+[/|]\\s+/).map(x => x.trim()).filter(x => x &&\n    !/^(via |from )?wikimedia commons$/i.test(x) && !/^(own work|eigenes werk)$/i.test(x) &&\n    (parseLicenseName(x) || { code: 'other' }).code === 'other');\n  return cleanCreator(parts.join(' / '));\n}\nfunction artistUrl(html) {\n  const m = String(html || '').match(/<a\\b[^>]*\\bhref=\"([^\"]+)\"/i);\n  if (!m) return '';\n  let u = absUrl(m[1]);\n  const red = u.match(/^https:\\/\\/commons\\.wikimedia\\.org\\/w\\/index\\.php\\?title=(User:[^&]+)&action=edit&redlink=1/);\n  if (red) u = 'https://commons.wikimedia.org/wiki/' + red[1];\n  return isHttp(u) ? u : '';\n}\nconst curidOf = u => { const m = String(u || '').match(/commons\\.wikimedia\\.org\\/w\\/index\\.php\\?(?:[^#]*&)?curid=(\\d+)/i); return m ? m[1] : ''; };\nfunction creditFor(c) {\n  const title = plain(c.title, 120);\n  const creator = plain(c.creator, 80) || 'Unknown author';\n  const head = title ? `Photo: \"${title}\"` : 'Photo';\n  if (c.license === 'cc0' || c.license === 'pdm') {\n    const by = creator !== 'Unknown author' ? ' by ' + creator : '';\n    return `${head}${by} (${c.license_name}), via ${c.source_name}`;\n  }\n  return `${head} by ${creator}, ${c.license_name}, via ${c.source_name}`;\n}\nconst toCode = v => { const n = typeof v === 'string' ? parseInt(v, 10) : v; return Number.isInteger(n) && n >= 100 && n <= 599 ? n : 0; };\nfunction n8nErrorLabel(err) {\n  if (typeof err === 'string') return /json/i.test(err) ? 'invalid JSON' : plain(err, 60) || 'request failed';\n  if (!err || typeof err !== 'object') return 'request failed';\n  if (err.name === 'SsrfBlockedIpError') return 'blocked by SSRF protection';\n  const status = toCode(err.status) || toCode(err.httpCode) || toCode(err.statusCode);\n  if (status) return 'HTTP ' + status;\n  const msg = String(err.message || err.description || '');\n  const m = msg.match(/^(\\d{3}) - /) || msg.match(/status code (\\d{3})/i);\n  if (m) return 'HTTP ' + m[1];\n  const code = typeof err.code === 'string' ? err.code : '';\n  if (code === 'ECONNABORTED' || code === 'ETIMEDOUT' || /timeout|timed out/i.test(msg)) return 'timeout';\n  if (code) return code;\n  return msg ? plain(msg, 60) : 'request failed';\n}\n\n// Download host allowlist (SSRF guard): file_url comes from Openverse/Commons data, so only https URLs on the known\n// image CDNs are fetched. Anything else (plain http, internal addresses, other hosts) is skipped like a bad licence.\nconst DOWNLOAD_HOSTS = ['upload.wikimedia.org'];\nconst DOWNLOAD_HOST_SUFFIXES = ['.staticflickr.com'];\nfunction downloadAllowed(u) {\n  const m = String(u || '').trim().match(/^https:\\/\\/([a-z0-9.-]+)(?::443)?(?:[/?#]|$)/i);\n  if (!m) return false;\n  const h = m[1].toLowerCase();\n  return DOWNLOAD_HOSTS.includes(h) || DOWNLOAD_HOST_SUFFIXES.some(sfx => h.endsWith(sfx) && h.length > sfx.length);\n}\n\n// --- Same as in plan-licence-check.js (a unit test keeps the copies identical) ----------------------------------\nconst hostOf = u => ((String(u || '').match(/^https?:\\/\\/([^/?#]+)/i) || [])[1] || '').toLowerCase();\n\n// An Openverse row whose file lives on Wikimedia Commons.\nfunction isWikimediaRow(c) {\n  if (!isObj(c) || c.provider !== 'openverse') return false;\n  return c.source_name === 'Wikimedia Commons' || hostOf(c.file_url) === 'upload.wikimedia.org' || curidOf(c.landing_url) !== '';\n}\n\n// Pages of a Commons API answer (formatversion 2 list or 1 object; plain or neverError/fullResponse item).\nfunction pagesOf(json) {\n  if (!isObj(json)) return [];\n  let body = json;\n  if (Number.isInteger(json.statusCode) && ('body' in json || 'data' in json)) {\n    body = 'body' in json ? json.body : json.data;\n    if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { return []; } }\n  }\n  if (!isObj(body) || !isObj(body.query) || !body.query.pages || typeof body.query.pages !== 'object') return [];\n  const pages = Array.isArray(body.query.pages) ? body.query.pages : Object.values(body.query.pages);\n  return pages.filter(p => isObj(p));\n}\n\n// --- Credit line: this block is identical in confirm-licence.js and hand-back-post.js (a unit test checks) ---\nconst ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#039;' };\nconst esc = s => String(s ?? '').replace(/[&<>\"']/g, ch => ESCAPES[ch]);\n// One line of plain text: no control or invisible direction characters, no em or en dashes (house rule), bounded.\nfunction cleanText(v, max) {\n  let t = typeof v === 'string' ? v : (typeof v === 'number' && Number.isFinite(v) ? String(v) : '');\n  t = t.replace(/[\\u0000-\\u001f\\u007f-\\u009f\\u200b-\\u200f\\u2028\\u2029\\u202a-\\u202e\\u2066-\\u2069\\ufeff]/g, ' ')\n    .replace(/[\\u2012-\\u2015\\u2212]/g, '-').replace(/\\s+/g, ' ').trim();\n  if (max && t.length > max) t = t.slice(0, max - 3).replace(/\\s+\\S*$/, '') + '...';\n  return t;\n}\n// The URL when it is an absolute http(s) URL that is safe in a double-quoted href, else ''. Rejects javascript:,\n// data: and other schemes, protocol-relative and relative URLs, user:password@ hosts, odd hosts, whitespace,\n// quotes, angle brackets, backslashes and invisible direction characters.\nfunction safeUrl(v) {\n  if (typeof v !== 'string') return '';\n  const u = v.replace(/^[ \\t\\r\\n]+|[ \\t\\r\\n]+$/g, '');\n  if (!u || u.length > 2000) return '';\n  if (/[\\u0000- \\u007f-\\u009f\"<>\\\\`\\u200b-\\u200f\\u2028\\u2029\\u202a-\\u202e\\u2066-\\u2069\\ufeff]/.test(u)) return '';\n  const m = u.match(/^https?:\\/\\/([^/?#]*)(?:[/?#]|$)/i);\n  if (!m || !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?::\\d{1,5})?$/i.test(m[1])) return '';\n  return u;\n}\n// \"Photo: <a href=landing>title</a> by <a href=creator_url>creator</a>, <a href=license_url>licence</a>, via source.\"\n// A part is linked only when its URL passes safeUrl; every value is escaped. CC0 and public domain photos without\n// a known creator leave out \"by ...\".\nfunction creditHtml(img) {\n  const link = (url, text) => (safeUrl(url) ? `<a href=\"${esc(safeUrl(url))}\">${esc(text)}</a>` : esc(text));\n  const pd = img.license === 'cc0' || img.license === 'pdm';\n  let creator = cleanText(img.creator, 100);\n  if (pd && /^unknown author$/i.test(creator)) creator = '';\n  if (!pd && !creator) creator = 'Unknown author';\n  const licence = cleanText(img.license_name, 60);\n  const source = cleanText(img.source_name, 80);\n  let html = 'Photo: ' + link(img.landing_url, cleanText(img.title, 150) || 'Untitled');\n  if (creator) html += ' by ' + (/^unknown author$/i.test(creator) ? esc(creator) : link(img.creator_url, creator));\n  if (licence) html += ', ' + link(img.license_url, licence);\n  if (source) html += ', via ' + esc(source);\n  return html + '.';\n}\n// The credit as one small-print paragraph block, like the disclaimer at the end of \"Render WP blocks\".\nconst creditBlock = img => '<!-- wp:paragraph {\"fontSize\":\"small\"} -->\\n<p class=\"has-small-font-size\">' + creditHtml(img) +\n  '</p>\\n<!-- /wp:paragraph -->';\n// --- End of credit line ---\n\n// --- Commons lookup -----------------------------------------------------------------------------------------\n// The lookup item -> {ok, error, pages: Map(pageid -> page)}. n8n failure items, non-2xx full responses and\n// MediaWiki errors (HTTP 200 with {error: {code, info}}) are errors.\nfunction readLookup(json) {\n  const fail = error => ({ ok: false, error, pages: new Map() });\n  if (!isObj(json)) return fail('empty response');\n  let body = json;\n  if (toCode(json.statusCode) && ('body' in json || 'data' in json || 'headers' in json)) {\n    const code = toCode(json.statusCode);\n    if (code < 200 || code >= 300) return fail('HTTP ' + code);\n    body = 'body' in json ? json.body : json.data;\n    if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { return fail('non-JSON response'); } }\n  }\n  if (!isObj(body)) return fail('empty response');\n  if (body.error !== undefined && body.error !== null) {\n    const e = body.error;\n    if (isObj(e) && typeof e.code === 'string' && e.info !== undefined && !e.name) return fail('API ' + e.code);\n    return fail(n8nErrorLabel(e));\n  }\n  if (!isObj(body.query) && !('batchcomplete' in body)) return fail('unexpected response');\n  const pages = new Map();\n  for (const p of pagesOf(body)) {\n    const id = p.pageid === undefined || p.pageid === null ? '' : String(p.pageid);\n    if (id && !pages.has(id)) pages.set(id, p);\n  }\n  return { ok: true, error: '', pages };\n}\n\n// The step 3 Commons rules for one page against candidate c -> {image} (c with Commons licence and creator) or {reason}.\nfunction verdict(page, c) {\n  if (!isObj(page) || (page.missing !== undefined && page.missing !== false) || page.invalid) return { reason: 'file not found on Commons' };\n  const ii = Array.isArray(page.imageinfo) ? page.imageinfo[0] : null;\n  if (!isObj(ii)) return { reason: 'no file info on Commons' };\n  const em = isObj(ii.extmetadata) ? ii.extmetadata : {};\n  const meta = k => {\n    const v = em[k];\n    if (isObj(v)) return v.value === null || v.value === undefined ? '' : String(v.value);\n    return typeof v === 'string' || typeof v === 'number' ? String(v) : '';\n  };\n  const d = decideLicense([meta('LicenseShortName'), meta('License')], meta('LicenseUrl'), meta('UsageTerms'), meta('NonFree'));\n  if (d.reject) return { reason: 'Commons: ' + d.detail };\n  if (REJECT_COMMONS_LICENSE.test(meta('License').trim())) return { reason: 'Commons: public domain logo or simple shape' };\n  const restrictions = meta('Restrictions').toLowerCase().split('|').map(s => s.trim()).filter(Boolean);\n  const bad = restrictions.find(x => REJECT_RESTRICTIONS.includes(x));\n  if (bad) return { reason: 'Commons: restriction ' + bad };\n  const onCommons = normUrl(absUrl(str(ii.url)));\n  const here = normUrl(c.file_url);\n  if (onCommons && here && onCommons !== here) return { reason: 'the Commons page shows another file' };\n  const artist = meta('Artist');\n  const creator = requestedCredit(meta('Attribution')) || cleanCreator(artist);\n  const image = {\n    ...c,\n    creator: creator || c.creator || 'Unknown author',\n    creator_url: artistUrl(artist) || (creator && creator !== c.creator ? '' : c.creator_url),\n    ...licenseFields(d.lic, meta('LicenseUrl')),\n  };\n  image.attribution_required = d.lic.code === 'by' || d.lic.code === 'by-sa' || /^true$/i.test(meta('AttributionRequired').trim());\n  image.credit_text = creditFor(image);\n  return { image };\n}\n\n// --- Output fields -------------------------------------------------------------------------------------------\n// ASCII-only name with a photo extension: WordPress reads only a plain filename=\"...\" and decides the file type by\n// its extension (plus the bytes); Node rejects non-Latin-1 header values.\nfunction safeFilename(img) {\n  const raw = String(img.extension || '').toLowerCase();\n  const ext = PHOTO_EXTENSIONS.includes(raw === 'jpeg' ? 'jpg' : raw) ? (raw === 'jpeg' ? 'jpg' : raw) : 'jpg';\n  const base = String(img.download_filename || '').replace(/\\.[A-Za-z0-9]{1,5}$/, '').replace(/[^A-Za-z0-9_-]+/g, '-')\n    .replace(/-{2,}/g, '-').replace(/^[-_]+|[-_]+$/g, '').slice(0, 90).replace(/[-_]+$/, '');\n  return (base || 'watch-photo') + '.' + ext;\n}\n// Body of \"Image: set alt text and caption\". alt_text and title are plain text (WordPress runs alt_text through\n// sanitize_text_field, which drops tags and %xx octets, and strips tags from titles for Author accounts); caption\n// and description keep their links (kses allows <a href> for every role).\nfunction mediaUpdate(img) {\n  const credit = creditHtml(img);\n  const landing = safeUrl(img.landing_url);\n  const flat = (v, max) => cleanText(v, max).replace(/[<>]/g, '').replace(/%(?=[0-9a-f]{2})/gi, '% ');\n  return {\n    alt_text: flat(img.alt_text, 200),\n    caption: credit,\n    title: flat(img.title, 150) || flat(img.alt_text, 150),\n    description: '<p>' + credit + '</p>' + (landing ? '\\n<p>Source: <a href=\"' + esc(landing) + '\">' + esc(landing) + '</a></p>' : ''),\n  };\n}\n\nfunction confirm(plan, lookup) {\n  const lc = isObj(plan.licence_check) ? plan.licence_check : {};\n  const searchPages = isObj(lc.search_pages) ? lc.search_pages : {};\n  const base = { ...plan };\n  delete base.licence_check;\n  delete base.media_update;\n  const lookupStatus = lookup ? (lookup.ok ? 'ok' : lookup.error) : 'not needed';\n  const checked = [];\n  if (!isObj(plan.image)) {\n    return { ...base, image: null, alternates: [], licence_check: { status: 'no photo', lookup: lookupStatus, checked }, media_update: null };\n  }\n  const cands = [plan.image].concat(Array.isArray(plan.alternates) ? plan.alternates : []).filter(isObj);\n  let chosen = null;\n  let at = -1;\n  for (let k = 0; k < cands.length && !chosen; k++) {\n    const c = cands[k];\n    const entry = { provider: String(c.provider || ''), id: String(c.id ?? ''), pageid: '', result: 'skipped', reason: '' };\n    checked.push(entry);\n    if (!downloadAllowed(c.file_url)) { entry.result = 'rejected'; entry.reason = 'file URL not on the download allowlist'; continue; }\n    if (!isWikimediaRow(c)) {\n      entry.result = 'used';\n      entry.reason = c.provider === 'commons' ? 'licence read from Commons by the search' : 'not a Wikimedia Commons file';\n      chosen = c;\n      at = k;\n      break;\n    }\n    entry.pageid = curidOf(c.landing_url);\n    if (!entry.pageid) { entry.reason = 'no Commons page id in the landing URL'; continue; }\n    let page = isObj(searchPages[entry.pageid]) ? searchPages[entry.pageid] : null;\n    let via = 'search';\n    if (!page && lookup && lookup.ok && lookup.pages.has(entry.pageid)) { page = lookup.pages.get(entry.pageid); via = 'lookup'; }\n    if (!page) {\n      entry.reason = !lookup ? 'not looked up on Commons' : (lookup.ok ? 'not found on Commons' : 'Commons lookup failed: ' + lookup.error);\n      continue;\n    }\n    const v = verdict(page, c);\n    if (!v.image) { entry.result = 'rejected'; entry.reason = v.reason + ' (Commons ' + via + ')'; continue; }\n    entry.result = 'used';\n    entry.reason = 'licence confirmed by the Commons ' + via;\n    chosen = v.image;\n    at = k;\n  }\n  if (!chosen) {\n    const why = checked.map(e => `${e.provider} ${e.id}: ${e.reason}`).join('; ');\n    return {\n      ...base, image: null, image_error: plain('no picked photo passed the Commons licence check: ' + why, 900), alternates: [],\n      licence_check: { status: 'rejected', lookup: lookupStatus, checked }, media_update: null,\n    };\n  }\n  const image = { ...chosen, download_filename: safeFilename(chosen) };\n  const confirmed = checked[checked.length - 1].reason.startsWith('licence confirmed');\n  const status = at > 0 ? 'alternate used' : (confirmed ? 'confirmed' : 'not needed');\n  return {\n    ...base, image, image_error: '', alternates: cands.slice(at + 1),\n    licence_check: { status, lookup: lookupStatus, checked }, media_update: mediaUpdate(image),\n  };\n}\n\n// --- Main ------------------------------------------------------------------------------------------------------\nconst items = $input.all();\nconst isPlanItem = j => isObj(j) && isObj(j.licence_check) && 'image' in j && 'source' in j;\n// The plan item behind lookup answer i (pairedItem); with a single item, the only plan item.\nfunction planFor(i) {\n  try {\n    const it = $('Image: plan licence check').itemMatching(i);\n    if (it && isPlanItem(it.json)) return it.json;\n  } catch (e) { /* fall through */ }\n  if (items.length === 1) {\n    try {\n      const all = $('Image: plan licence check').all();\n      if (all.length === 1 && all[0] && isPlanItem(all[0].json)) return all[0].json;\n    } catch (e) { /* not executed */ }\n  }\n  return null;\n}\n\nconst out = [];\nitems.forEach((item, i) => {\n  const json = item && item.json;\n  let result;\n  try {\n    if (isPlanItem(json)) result = confirm(json, null);\n    else {\n      const plan = planFor(i);\n      result = plan ? confirm(plan, readLookup(json))\n        : { image: null, image_error: 'licence check failed: the picked photo was not found', alternates: [], licence_check: { status: 'failed', lookup: '', checked: [] }, media_update: null };\n    }\n  } catch (e) {\n    const base = isPlanItem(json) ? { ...json } : {};\n    delete base.licence_check;\n    result = {\n      ...base, image: null, image_error: 'licence check failed: ' + plain(e && e.message ? e.message : String(e), 200), alternates: [],\n      licence_check: { status: 'failed', lookup: '', checked: [] }, media_update: null,\n    };\n  }\n  out.push({ json: result, pairedItem: { item: i } });\n});\nreturn out;"
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f05",
+      "name": "Image: has photo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5180,
+        1040
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Image: has photo?",
+              "leftValue": "={{ !!($json.image && $json.image.file_url && $json.image.download_filename) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f06",
+      "name": "Image: download photo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5400,
+        880
+      ],
+      "parameters": {
+        "url": "={{ $json.image.file_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "WatchCentroImageFinder/1.0 (+https://watchcentro.com)"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "photo"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f07",
+      "name": "Image: photo OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5620,
+        880
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Image: photo OK?",
+              "leftValue": "={{ !!($binary.photo && ['image/jpeg','image/png','image/webp'].includes(String($binary.photo.mimeType || '').split(';')[0].trim().toLowerCase()) && Number($binary.photo.bytes) > 0 && Number($binary.photo.bytes) <= 15728640) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f08",
+      "name": "Image: upload to WordPress",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5840,
+        720
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://watchcentro.com/wp-json/wp/v2/media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "={{ $binary.photo.mimeType }}"
+            },
+            {
+              "name": "Content-Disposition",
+              "value": "=attachment; filename=\"{{ $json.image.download_filename }}\""
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "photo",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "wordpressApi": {
+          "id": "LPEXDGdEBrfFA7NC",
+          "name": "WatchCentro"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f09",
+      "name": "Image: uploaded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6060,
+        720
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "Image: uploaded?",
+              "leftValue": "={{ typeof $json.id === 'number' && $json.id > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f0a",
+      "name": "Image: set alt text and caption",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6280,
+        560
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://watchcentro.com/wp-json/wp/v2/media/{{ $json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Image: confirm licence').item.json.media_update) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "wordpressApi": {
+          "id": "LPEXDGdEBrfFA7NC",
+          "name": "WatchCentro"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f0b",
+      "name": "Image: hand back post",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6500,
+        1040
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Image finder, steps 5 and 6: hand the post back to \"WordPress: create draft\", with the featured image when the\n// photo was uploaded. This is the exit of the fragment. It is wired from every place the image chain can end:\n//   \"Image: has photo?\" false, \"Image: photo OK?\" false, \"Image: uploaded?\" false, \"Image: set alt text and caption\".\n// Output, exactly one item per input item: the original \"Render WP blocks\" item (the `source` that step 2 kept)\n// with every field byte-identical, plus\n//   featured_media: the media id, ONLY when the upload succeeded (absent otherwise, so JSON.stringify drops it)\n//   content:        source.content + a small-print credit paragraph, ONLY when the image is attached\n//   image_report:   {status: attached | no_image | failed, reason, media_id, source_url, credit_text, license_name,\n//                    landing_url, provider, photo_title, download_filename, alt_text_set, licence_check, search_summary, extract_error}\n// pairedItem {item: i} keeps .item references to Render WP blocks working in the nodes after it.\n// Which steps ran for an item is read with itemMatching (a node that is not on the item's path throws); with a\n// single post, an executed node is on the path. A failed alt text update keeps the featured image.\n// When the photo is attached, its keys are added to $getWorkflowStaticData('global').imageFinder.recent (step 3\n// reads that list: a recently used photo scores -40). This node only runs on the Live mode? true branch, a run\n// that \"Record run id\" also saves static data in. Nothing here throws.\n\n// --- Config ---------------------------------------------------------------------------------------\n// Same limits as the \"Image: photo OK?\" IF node (keep them in step).\nconst MAX_PHOTO_BYTES = 15 * 1024 * 1024;\nconst PHOTO_MIMES = ['image/jpeg', 'image/png', 'image/webp'];\n// Record an attached photo in the static data (see above), keeping the newest RECENT_LIMIT entries.\nconst REMEMBER_USED = true;\nconst RECENT_LIMIT = 30;\n\nconst isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);\nconst toCode = v => { const n = typeof v === 'string' ? parseInt(v, 10) : v; return Number.isInteger(n) && n >= 100 && n <= 599 ? n : 0; };\nconst mediaId = v => (Number.isInteger(v) && v > 0 ? v : (typeof v === 'string' && /^[1-9]\\d{0,14}$/.test(v) ? Number(v) : null));\n\n// --- Credit line: this block is identical in confirm-licence.js and hand-back-post.js (a unit test checks) ---\nconst ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#039;' };\nconst esc = s => String(s ?? '').replace(/[&<>\"']/g, ch => ESCAPES[ch]);\n// One line of plain text: no control or invisible direction characters, no em or en dashes (house rule), bounded.\nfunction cleanText(v, max) {\n  let t = typeof v === 'string' ? v : (typeof v === 'number' && Number.isFinite(v) ? String(v) : '');\n  t = t.replace(/[\\u0000-\\u001f\\u007f-\\u009f\\u200b-\\u200f\\u2028\\u2029\\u202a-\\u202e\\u2066-\\u2069\\ufeff]/g, ' ')\n    .replace(/[\\u2012-\\u2015\\u2212]/g, '-').replace(/\\s+/g, ' ').trim();\n  if (max && t.length > max) t = t.slice(0, max - 3).replace(/\\s+\\S*$/, '') + '...';\n  return t;\n}\n// The URL when it is an absolute http(s) URL that is safe in a double-quoted href, else ''. Rejects javascript:,\n// data: and other schemes, protocol-relative and relative URLs, user:password@ hosts, odd hosts, whitespace,\n// quotes, angle brackets, backslashes and invisible direction characters.\nfunction safeUrl(v) {\n  if (typeof v !== 'string') return '';\n  const u = v.replace(/^[ \\t\\r\\n]+|[ \\t\\r\\n]+$/g, '');\n  if (!u || u.length > 2000) return '';\n  if (/[\\u0000- \\u007f-\\u009f\"<>\\\\`\\u200b-\\u200f\\u2028\\u2029\\u202a-\\u202e\\u2066-\\u2069\\ufeff]/.test(u)) return '';\n  const m = u.match(/^https?:\\/\\/([^/?#]*)(?:[/?#]|$)/i);\n  if (!m || !/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?::\\d{1,5})?$/i.test(m[1])) return '';\n  return u;\n}\n// \"Photo: <a href=landing>title</a> by <a href=creator_url>creator</a>, <a href=license_url>licence</a>, via source.\"\n// A part is linked only when its URL passes safeUrl; every value is escaped. CC0 and public domain photos without\n// a known creator leave out \"by ...\".\nfunction creditHtml(img) {\n  const link = (url, text) => (safeUrl(url) ? `<a href=\"${esc(safeUrl(url))}\">${esc(text)}</a>` : esc(text));\n  const pd = img.license === 'cc0' || img.license === 'pdm';\n  let creator = cleanText(img.creator, 100);\n  if (pd && /^unknown author$/i.test(creator)) creator = '';\n  if (!pd && !creator) creator = 'Unknown author';\n  const licence = cleanText(img.license_name, 60);\n  const source = cleanText(img.source_name, 80);\n  let html = 'Photo: ' + link(img.landing_url, cleanText(img.title, 150) || 'Untitled');\n  if (creator) html += ' by ' + (/^unknown author$/i.test(creator) ? esc(creator) : link(img.creator_url, creator));\n  if (licence) html += ', ' + link(img.license_url, licence);\n  if (source) html += ', via ' + esc(source);\n  return html + '.';\n}\n// The credit as one small-print paragraph block, like the disclaimer at the end of \"Render WP blocks\".\nconst creditBlock = img => '<!-- wp:paragraph {\"fontSize\":\"small\"} -->\\n<p class=\"has-small-font-size\">' + creditHtml(img) +\n  '</p>\\n<!-- /wp:paragraph -->';\n// --- End of credit line ---\n\n// --- HTTP results ----------------------------------------------------------------------------------------------\n// Text of an error body: a WordPress {code, message} object, an HTML page (its <title>) or plain text.\nfunction bodyText(body) {\n  if (isObj(body)) {\n    const code = cleanText(body.code, 60);\n    const msg = cleanText(String(typeof body.message === 'string' ? body.message : '').replace(/<[^>]*>/g, ' '), 160);\n    return [code, msg].filter(Boolean).join(': ');\n  }\n  if (typeof body !== 'string') return '';\n  const title = body.match(/<title[^>]*>([^<]*)<\\/title>/i);\n  if (title) return cleanText(title[1], 120).replace(/^\\d{3}\\s+/, '');\n  if (/<[a-z!]/i.test(body)) return '';\n  return cleanText(body, 120);\n}\n// Tags stripped from an HTML error description (the WordPress fatal error page), one short line.\nconst htmlPlain = v => (typeof v === 'string' ? cleanText(v.replace(/<[^>]*>/g, ' '), 120) : '');\n// An n8n HTTP Request error (AxiosError.toJSON() without credentials, NodeApiError with credentials, or a string)\n// -> short label such as \"HTTP 401 rest_cannot_create: Sorry, ...\", \"timeout\", \"connection refused\".\nfunction errorLabel(err) {\n  if (typeof err === 'string') return cleanText(err, 200) || 'request failed';\n  if (!isObj(err)) return 'request failed';\n  const cause = isObj(err.cause) ? err.cause : {};\n  const texts = [cause.message, err.message].filter(t => typeof t === 'string');\n  let status = toCode(err.status) || toCode(err.httpCode) || toCode(err.statusCode);\n  let body = null;\n  for (const t of texts) {\n    const m = t.match(/^(\\d{3}) - ([\\s\\S]*)$/);\n    if (!m) continue;\n    status = status || toCode(m[1]);\n    try { body = JSON.parse(m[2]); if (typeof body === 'string' && /^[[{]/.test(body.trim())) body = JSON.parse(body); } catch (e) { body = m[2]; }\n    break;\n  }\n  if (status) {\n    const text = bodyText(body) || bodyText(err.description) || htmlPlain(err.description);\n    return 'HTTP ' + status + (text ? ' ' + text : '');\n  }\n  const all = texts.concat([String(err.code || '')]).join(' ');\n  if (/ECONNABORTED|ETIMEDOUT|timeout|timed out/i.test(all)) return 'timeout';\n  if (/ECONNREFUSED|refused/i.test(all)) return 'connection refused';\n  if (/ENOTFOUND|EAI_AGAIN/i.test(all)) return 'host not found';\n  if (/ECONNRESET|socket hang up/i.test(all)) return 'connection reset';\n  return cleanText(texts[0] || err.code || '', 160) || 'request failed';\n}\n// One HTTP Request output item -> {ok, status, body} or {ok: false, error}. Handles plain bodies, the\n// neverError + fullResponse shape {body | data, headers, statusCode} and onError failure items {error}.\nfunction httpResult(json) {\n  if (!isObj(json)) return { ok: false, error: 'no response' };\n  if (toCode(json.statusCode) && ('body' in json || 'data' in json || 'headers' in json)) {\n    const status = toCode(json.statusCode);\n    let body = 'body' in json ? json.body : json.data;\n    if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { /* HTML or text */ } }\n    if (status >= 200 && status < 300) return { ok: true, status, body };\n    const text = bodyText(body);\n    return { ok: false, error: 'HTTP ' + status + (text ? ' ' + text : '') };\n  }\n  if (json.error !== undefined && json.error !== null) return { ok: false, error: errorLabel(json.error) };\n  return { ok: true, status: 0, body: json };\n}\n// Why a download is not uploaded ('' when it is fine). Mirrors the \"Image: photo OK?\" condition.\nfunction photoProblem(bin) {\n  if (!isObj(bin)) return 'the download holds no file';\n  const mime = String(bin.mimeType || '').toLowerCase().split(';')[0].trim();\n  if (!PHOTO_MIMES.includes(mime)) return 'the download is not a JPEG, PNG or WebP image (' + (cleanText(mime, 60) || 'unknown type') + ')';\n  const bytes = Number(bin.bytes);\n  if (!Number.isFinite(bytes) || bytes <= 0) return 'the download is empty or its size is unknown';\n  if (bytes > MAX_PHOTO_BYTES) return `the photo is too large (${(bytes / 1048576).toFixed(1)} MB, limit ${MAX_PHOTO_BYTES / 1048576} MB)`;\n  return '';\n}\n\n// --- Report pieces ---------------------------------------------------------------------------------------------\nfunction searchSummary(log) {\n  if (!Array.isArray(log) || !log.length) return 'no searches';\n  const by = {};\n  for (const e of log) {\n    if (!isObj(e)) continue;\n    const p = cleanText(e.provider, 20) || 'unknown';\n    const s = (by[p] = by[p] || { n: 0, ok: 0, results: 0, passed: 0, errors: {} });\n    s.n++;\n    if (e.status === 'ok') { s.ok++; s.results += Number(e.results) || 0; s.passed += Number(e.passed) || 0; }\n    if (e.status === 'error') { const k = cleanText(e.http_error, 60) || 'error'; s.errors[k] = (s.errors[k] || 0) + 1; }\n  }\n  return Object.entries(by).map(([p, s]) => {\n    const errs = Object.entries(s.errors).map(([k, n]) => `${n}x ${k}`);\n    return `${p}: ${s.n} ${s.n === 1 ? 'search' : 'searches'}, ${s.ok} ok, ${s.results} results, ${s.passed} passed` + (errs.length ? ', errors: ' + errs.join(', ') : '');\n  }).join('; ');\n}\nfunction licenceSummary(lc) {\n  if (!isObj(lc)) return { status: '', lookup: '', checked: [] };\n  return {\n    status: cleanText(lc.status, 40), lookup: cleanText(lc.lookup, 120),\n    checked: (Array.isArray(lc.checked) ? lc.checked : []).filter(isObj).map(e => ({\n      provider: cleanText(e.provider, 20), id: cleanText(e.id, 80), result: cleanText(e.result, 20), reason: cleanText(e.reason, 300),\n    })),\n  };\n}\n\nfunction rememberUsed(img) {\n  if (!REMEMBER_USED) return;\n  try {\n    const keys = (Array.isArray(img.recent_keys) ? img.recent_keys : []).filter(k => typeof k === 'string' && k);\n    if (!keys.length || typeof $getWorkflowStaticData !== 'function') return;\n    const g = $getWorkflowStaticData('global');\n    if (!isObj(g)) return;\n    if (!isObj(g.imageFinder)) g.imageFinder = {};\n    const old = Array.isArray(g.imageFinder.recent) ? g.imageFinder.recent : [];\n    const kept = old.filter(r => {\n      const rk = typeof r === 'string' ? [r] : (isObj(r) ? [r.key].concat(Array.isArray(r.keys) ? r.keys : []) : []);\n      return !rk.some(k => keys.includes(k));\n    });\n    kept.push({ key: keys[0], keys, at: new Date().toISOString() });\n    g.imageFinder.recent = kept.slice(-RECENT_LIMIT); // a new array, so n8n sees the change\n  } catch (e) { /* best effort */ }\n}\n\n// --- Which steps ran for an item ----------------------------------------------------------------------------------\nconst inputs = $input.all();\n// One post in this execution (\"Image: pick photo\" emits one item per post): every executed node is on its path.\nconst singlePost = (() => {\n  try { const a = $('Image: pick photo').all(); return Array.isArray(a) && a.length === 1 && inputs.length === 1; } catch (e) { return false; }\n})();\n// The item of a node on input item i's path, or null when that node did not run for it.\nfunction onPath(get, i) {\n  let node;\n  try { node = get(); if (!node || node.isExecuted === false) return null; } catch (e) { return null; }\n  try { const it = node.itemMatching(i); if (it && isObj(it.json)) return it; } catch (e) { /* not on this item's path */ }\n  if (!singlePost) return null;\n  try {\n    const all = node.all();\n    return Array.isArray(all) && all.length === 1 && all[0] && isObj(all[0].json) ? all[0] : null;\n  } catch (e) { return null; }\n}\nconst confirmNode = () => $('Image: confirm licence');\nconst planNode = () => $('Image: plan licence check');\nconst pickNode = () => $('Image: pick photo');\nconst downloadNode = () => $('Image: download photo');\nconst uploadNode = () => $('Image: upload to WordPress');\nconst altNode = () => $('Image: set alt text and caption');\n\n// The post state (source, image, ...) for item i: the confirm node, else earlier nodes, else the item itself.\nfunction postFor(item, i) {\n  for (const get of [confirmNode, planNode, pickNode]) {\n    const it = onPath(get, i);\n    if (it && isObj(it.json.source)) return it.json;\n  }\n  return item && isObj(item.json) && isObj(item.json.source) ? item.json : null;\n}\n\n// --- Main ----------------------------------------------------------------------------------------------------\n// The report with every key; status and reason are set by the caller.\nfunction makeReport(post) {\n  const img = post && isObj(post.image) ? post.image : null;\n  return {\n    status: 'failed', reason: '', media_id: null, source_url: '',\n    credit_text: img ? cleanText(img.credit_text, 400) : '', license_name: img ? cleanText(img.license_name, 60) : '',\n    landing_url: img ? safeUrl(img.landing_url) : '', provider: img ? cleanText(img.provider, 20) : '',\n    photo_title: img ? cleanText(img.title, 150) : '',\n    download_filename: img ? String(img.download_filename || '').replace(/[^A-Za-z0-9._-]/g, '').slice(0, 120) : '', alt_text_set: null,\n    licence_check: licenceSummary(post && post.licence_check), search_summary: searchSummary(post && post.search_log),\n    extract_error: cleanText(post && post.extract_error, 300),\n  };\n}\n\nfunction handBack(item, i) {\n  const post = postFor(item, i);\n  if (!post) {\n    const own = item && isObj(item.json) ? { ...item.json } : {};\n    delete own.error;\n    const report = makeReport(null);\n    report.reason = 'the post was not found in the image finder nodes';\n    return { ...own, image_report: report };\n  }\n  const source = post.source;\n  const img = isObj(post.image) ? post.image : null;\n  const report = makeReport(post);\n  const done = (status, reason) => { report.status = status; report.reason = cleanText(reason, 900); return { ...source, image_report: report }; };\n\n  if (!img) return done('no_image', post.image_error || 'no photo was picked');\n  const dl = onPath(downloadNode, i);\n  if (!dl) return done('failed', 'the photo was not downloaded');\n  const dlRes = httpResult(dl.json);\n  if (!dlRes.ok && !(dl.binary && dl.binary.photo)) return done('failed', 'download failed: ' + dlRes.error);\n  const bin = (item && item.binary && item.binary.photo) || (dl.binary && dl.binary.photo) || null;\n  const problem = photoProblem(bin);\n  const up = onPath(uploadNode, i);\n  if (!up) return done('failed', problem || 'the photo was not uploaded');\n  const upRes = httpResult(up.json);\n  if (!upRes.ok) return done('failed', 'upload to WordPress failed: ' + upRes.error);\n  const media = isObj(upRes.body) ? upRes.body : {};\n  const id = mediaId(media.id);\n  if (!id) return done('failed', 'WordPress answered the upload without a media id');\n  report.media_id = id;\n  report.source_url = safeUrl(media.source_url);\n\n  const alt = onPath(altNode, i);\n  let warning = '';\n  if (!alt) { report.alt_text_set = false; warning = 'alt text and caption were not set (the update did not run)'; }\n  else {\n    const altRes = httpResult(alt.json);\n    report.alt_text_set = altRes.ok;\n    if (!altRes.ok) warning = 'alt text and caption were not set: ' + altRes.error;\n  }\n  const content = typeof source.content === 'string' ? source.content : '';\n  const out = { ...source, content: content + (content ? '\\n\\n' : '') + creditBlock(img), featured_media: id };\n  report.status = 'attached';\n  report.reason = warning ? cleanText(warning + '; the featured image is attached', 900) : '';\n  rememberUsed(img);\n  return { ...out, image_report: report };\n}\n\nconst result = [];\ninputs.forEach((item, i) => {\n  let json;\n  try { json = handBack(item, i); } catch (e) {\n    let base = {};\n    try { const post = postFor(item, i); base = post ? { ...post.source } : {}; } catch (e2) { base = {}; }\n    let report;\n    try { report = makeReport(null); } catch (e3) { report = { status: 'failed', reason: '', media_id: null, source_url: '' }; }\n    report.reason = 'hand back failed: ' + String(e && e.message ? e.message : e).slice(0, 200);\n    json = { ...base, image_report: report };\n  }\n  result.push({ json, pairedItem: { item: i } });\n});\nreturn result;"
+      }
+    },
+    {
+      "id": "0b1c7e52-5a3d-4c8e-9f21-6d4a8b3e1f0c",
+      "name": "Image finder (steps 4-6)",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4300,
+        1260
+      ],
+      "parameters": {
+        "content": "## Image finder (steps 4-6): check, upload, attach\n\n**Live branch only.** Wire *Live mode?* (true) -> *Image: prep post text*, and *Image: hand back post* -> *WordPress: create draft* (README, \"Integration\").\n\n**Flow:** *plan licence check* lists the Commons page ids of Wikimedia-sourced Openverse picks that this run's Commons search did not already return -> *needs Commons lookup?* -> *look up licence on Commons* (one imageinfo request) -> *confirm licence* re-applies the step 3 licence rules (else the next alternate, else no image) -> *has photo?* -> *download photo* -> *photo OK?* (JPEG/PNG/WebP, at most 15 MB) -> *upload to WordPress* (raw body, credential WatchCentro) -> *uploaded?* -> *set alt text and caption* -> *hand back post*.\n\n**Output of hand back post:** the untouched *Render WP blocks* item plus `image_report`; with a photo also `featured_media` and a small credit paragraph at the end of `content`. Every failure (LLM, search, licence, download, upload) ends here with `image_report.status` no_image or failed, and the draft is still created. A failed alt text update keeps the featured image.\n\n**Create draft:** add `featured_media: $json.featured_media,` to its JSON body (undefined is dropped).",
+        "height": 420,
+        "width": 1100
       }
     }
   ],
@@ -343,6 +702,155 @@
         [
           {
             "node": "Image: pick photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: pick photo": {
+      "main": [
+        [
+          {
+            "node": "Image: plan licence check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: plan licence check": {
+      "main": [
+        [
+          {
+            "node": "Image: needs Commons lookup?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: needs Commons lookup?": {
+      "main": [
+        [
+          {
+            "node": "Image: look up licence on Commons",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Image: confirm licence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: look up licence on Commons": {
+      "main": [
+        [
+          {
+            "node": "Image: confirm licence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: confirm licence": {
+      "main": [
+        [
+          {
+            "node": "Image: has photo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: has photo?": {
+      "main": [
+        [
+          {
+            "node": "Image: download photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Image: hand back post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: download photo": {
+      "main": [
+        [
+          {
+            "node": "Image: photo OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: photo OK?": {
+      "main": [
+        [
+          {
+            "node": "Image: upload to WordPress",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Image: hand back post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: upload to WordPress": {
+      "main": [
+        [
+          {
+            "node": "Image: uploaded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: uploaded?": {
+      "main": [
+        [
+          {
+            "node": "Image: set alt text and caption",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Image: hand back post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image: set alt text and caption": {
+      "main": [
+        [
+          {
+            "node": "Image: hand back post",
             "type": "main",
             "index": 0
           }

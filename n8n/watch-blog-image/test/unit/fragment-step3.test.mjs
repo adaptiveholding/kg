@@ -5,37 +5,41 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { readText, SPLIT_CODE, PICK_CODE } from './harness.mjs';
 import {
-  buildFragment, buildStep3Fragment, buildImageFinder, buildAll, validate, NAMES, OUTPUTS, USER_AGENT, COMMONS_EXTMETADATA,
+  buildFragment, buildStep3Fragment, buildStep4Fragment, buildImageFinder, buildAll, validate, NAMES, OUTPUTS, USER_AGENT, COMMONS_EXTMETADATA,
 } from '../../build.mjs';
 
 const load = rel => JSON.parse(readText(rel));
 const step2 = load(OUTPUTS.step2);
 const step3 = load(OUTPUTS.step3);
+const step4 = load(OUTPUTS.step4);
 const all = load(OUTPUTS.cumulative);
 const byName = Object.fromEntries(all.nodes.map(n => [n.name, n]));
 const params = n => Object.fromEntries(n.parameters.queryParameters.parameters.map(p => [p.name, p.value]));
 const headers = n => Object.fromEntries(n.parameters.headerParameters.parameters.map(p => [p.name, p.value]));
 
 test('every generated file is in sync with build.mjs (run "npm run build" to refresh)', () => {
-  assert.deepEqual(Object.keys(buildAll()), [OUTPUTS.step2, OUTPUTS.step3, OUTPUTS.cumulative]);
+  assert.deepEqual(Object.keys(buildAll()), [OUTPUTS.step2, OUTPUTS.step3, OUTPUTS.step4, OUTPUTS.cumulative]);
   assert.deepEqual(step3, buildStep3Fragment());
+  assert.deepEqual(step4, buildStep4Fragment());
   assert.deepEqual(all, buildImageFinder());
   assert.deepEqual(step2, buildFragment());
 });
 
-test('cumulative fragment = step 2 + step 3 nodes, unchanged, plus the build queries -> split queries link', () => {
+test('cumulative fragment = step 2 + 3 + 4-6 nodes, unchanged, plus build queries -> split queries and pick photo -> plan licence check', () => {
   assert.deepEqual(Object.keys(all), ['nodes', 'connections', 'pinData']);
-  assert.deepEqual(all.nodes, [...step2.nodes, ...step3.nodes]);
+  assert.deepEqual(all.nodes, [...step2.nodes, ...step3.nodes, ...step4.nodes]);
   assert.deepEqual(all.connections, {
     ...step2.connections,
     [NAMES.build]: { main: [[{ node: NAMES.split, type: 'main', index: 0 }]] },
     ...step3.connections,
+    [NAMES.pick]: { main: [[{ node: NAMES.plan, type: 'main', index: 0 }]] },
+    ...step4.connections,
   });
   const chain = [NAMES.prep, NAMES.llm, NAMES.build, NAMES.split, NAMES.openverse, NAMES.commons, NAMES.pick];
   for (let i = 0; i < chain.length - 1; i++) {
     assert.deepEqual(all.connections[chain[i]].main, [[{ node: chain[i + 1], type: 'main', index: 0 }]], chain[i]);
   }
-  assert.equal(all.connections[NAMES.pick], undefined, 'pick photo is the end of the fragment');
+  assert.equal(all.connections[NAMES.handBack], undefined, 'hand back post is the end of the fragment');
 });
 
 test('step 3 nodes: names, types, versions no newer than Watch Centro, fixed ids, positions right of step 2', () => {

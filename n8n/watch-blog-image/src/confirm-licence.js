@@ -186,6 +186,17 @@ function n8nErrorLabel(err) {
   return msg ? plain(msg, 60) : 'request failed';
 }
 
+// Download host allowlist (SSRF guard): file_url comes from Openverse/Commons data, so only https URLs on the known
+// image CDNs are fetched. Anything else (plain http, internal addresses, other hosts) is skipped like a bad licence.
+const DOWNLOAD_HOSTS = ['upload.wikimedia.org'];
+const DOWNLOAD_HOST_SUFFIXES = ['.staticflickr.com'];
+function downloadAllowed(u) {
+  const m = String(u || '').trim().match(/^https:\/\/([a-z0-9.-]+)(?::443)?(?:[/?#]|$)/i);
+  if (!m) return false;
+  const h = m[1].toLowerCase();
+  return DOWNLOAD_HOSTS.includes(h) || DOWNLOAD_HOST_SUFFIXES.some(sfx => h.endsWith(sfx) && h.length > sfx.length);
+}
+
 // --- Same as in plan-licence-check.js (a unit test keeps the copies identical) ----------------------------------
 const hostOf = u => ((String(u || '').match(/^https?:\/\/([^/?#]+)/i) || [])[1] || '').toLowerCase();
 
@@ -224,7 +235,7 @@ function cleanText(v, max) {
 // quotes, angle brackets, backslashes and invisible direction characters.
 function safeUrl(v) {
   if (typeof v !== 'string') return '';
-  const u = v.trim();
+  const u = v.replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, '');
   if (!u || u.length > 2000) return '';
   if (/[\u0000- \u007f-\u009f"<>\\`\u200b-\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069\ufeff]/.test(u)) return '';
   const m = u.match(/^https?:\/\/([^/?#]*)(?:[/?#]|$)/i);
@@ -357,6 +368,7 @@ function confirm(plan, lookup) {
     const c = cands[k];
     const entry = { provider: String(c.provider || ''), id: String(c.id ?? ''), pageid: '', result: 'skipped', reason: '' };
     checked.push(entry);
+    if (!downloadAllowed(c.file_url)) { entry.result = 'rejected'; entry.reason = 'file URL not on the download allowlist'; continue; }
     if (!isWikimediaRow(c)) {
       entry.result = 'used';
       entry.reason = c.provider === 'commons' ? 'licence read from Commons by the search' : 'not a Wikimedia Commons file';

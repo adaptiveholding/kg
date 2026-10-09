@@ -1,0 +1,26 @@
+{
+  "id": "7c6e4505-15fa-471f-a9bb-b3906378f9ac",
+  "name": "WordPress: create draft",
+  "type": "n8n-nodes-base.httpRequest",
+  "typeVersion": 4.2,
+  "position": [
+    3060,
+    40
+  ],
+  "parameters": {
+    "method": "POST",
+    "url": "https://watchcentro.com/wp-json/wp/v2/posts",
+    "authentication": "predefinedCredentialType",
+    "nodeCredentialType": "wordpressApi",
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify({\n  title: $json.title,\n  slug: $json.slug,\n  content: $json.content,\n  excerpt: $json.excerpt,\n  status: 'draft',\n  categories: [39],\n  tags: [77],\n  meta: {\n    _yoast_wpseo_title: $json.seo_title,\n    _yoast_wpseo_metadesc: $json.meta_description,\n    _yoast_wpseo_focuskw: $json.focus_keyphrase\n  }\n}) }}",
+    "options": {}
+  },
+  "credentials": {
+    "wordpressApi": {
+      "id": "LPEXDGdEBrfFA7NC",
+      "name": "WatchCentro"
+    }
+  }
+}

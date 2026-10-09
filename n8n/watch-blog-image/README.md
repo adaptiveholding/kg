@@ -10,11 +10,16 @@ folder only produces a **paste-able node fragment** plus the notes below, which 
 | --- | --- | --- |
 | 1 | Choose image sources: Openverse API first, Wikimedia Commons as fallback. Licences CC0, PDM, CC BY, CC BY-SA, with a credit line on the post. | done |
 | 2 | Pull brands and models out of the post and build an ordered list of image search queries. | done: `workflows/step2-extract-watches.json` |
-| 3 | Search Openverse and Commons with those queries and pick one licence-safe, relevant photo per post (plus up to 3 alternates). | **done**: `workflows/step3-search-photos.json` |
-| 4 to 6 | Download the photo and upload it to the WordPress media library, set it as the featured image with a credit line, fallbacks and final placement. | not built yet |
+| 3 | Search Openverse and Commons with those queries and pick one licence-safe, relevant photo per post (plus up to 3 alternates). | done: `workflows/step3-search-photos.json` |
+| 4 | Licence cross-check on Commons for Wikimedia-sourced Openverse picks, download the photo, upload it to the WordPress media library, set alt text and caption. | done: `workflows/step4-6-upload-attach.json` |
+| 5 | Hand the post back with `featured_media` and a credit paragraph; one-line change to "WordPress: create draft". | done (same file) |
+| 6 | Fallbacks (every failure still creates the draft) and placement on the Live mode? true branch. | done (same file) |
 
-**Hand over `workflows/image-finder.json`**: the cumulative fragment, steps 2 and 3 wired together
-(10 nodes including 2 sticky notes). The two per-step files are kept for review and tests.
+All steps are built. See "Build and test" for the unit and real-n8n e2e results.
+
+**Hand over `workflows/image-finder.json`**: the full fragment, steps 2 to 6 wired together
+(22 nodes including 3 sticky notes). Entry: **Image: prep post text**. Exit: **Image: hand back post**. The per-step files
+are kept for review and tests. How to wire it in: "Integration" below.
 
 ```
 Render WP blocks item
@@ -25,6 +30,18 @@ Render WP blocks item
   -> Image: search Openverse         (step 3) HTTP Request, one GET per query
   -> Image: search Commons           (step 3) HTTP Request, one GET per query
   -> Image: pick photo               (step 3) one item per post: {source, ..., image, image_error, alternates, search_log}
+  -> Image: plan licence check       (step 4) which Wikimedia-sourced Openverse rows still need a Commons lookup
+  -> Image: needs Commons lookup?    (step 4) IF: any page ids?  true -> Image: look up licence on Commons (1 GET)
+  -> Image: confirm licence          (step 4) re-applies the step 3 licence rules; else next alternate; else no image
+  -> Image: has photo?               (step 4) IF  false ------------------------------------------------+
+  -> Image: download photo           (step 4) GET file_url -> binary "photo"                            |
+  -> Image: photo OK?                (step 4) IF JPEG/PNG/WebP and <= 15 MB  false ---------------------+
+  -> Image: upload to WordPress      (step 4) POST /wp-json/wp/v2/media, raw body                       |
+  -> Image: uploaded?                (step 4) IF numeric id  false -------------------------------------+
+  -> Image: set alt text and caption (step 4) POST /wp-json/wp/v2/media/<id>                            |
+  -> Image: hand back post           (steps 5-6) <------------------------------------------------------+
+       the Render WP blocks item unchanged, plus featured_media + credit paragraph when attached, plus image_report
+  -> WordPress: create draft         (Watch Centro, + one line: featured_media)
 ```
 
 ## The step 2 fragment
@@ -38,7 +55,7 @@ Render WP blocks item
 
 Plus a sticky note, "Image finder (step 2)". In the JSON the nodes sit below the existing flow, at x 2560 to 3520 and y 660 to
 about 1360. Those positions only hold when the JSON is merged into the workflow file directly: a paste in the editor drops the
-nodes where you last clicked (see integration note 5).
+nodes where you last clicked (see "Integration", note 1).
 
 **Output** (one item per input item, `pairedItem` kept):
 
@@ -299,19 +316,209 @@ a 401 fetches a new one and repeats the request once; tokens last 12 h (verified
 Openverse's terms ask apps to "prominently indicate that it was made using Openverse but is not endorsed or certified by Openverse"; step 5
 should decide where (for example "via Openverse" in the credit, or a site-level note).
 
-## Integration notes (for the agent that owns Watch Centro)
+## Steps 4 to 6: check, download, upload, attach
 
-1. **Paste**: copy all of `workflows/image-finder.json` (steps 2 and 3) and paste it onto the Watch Centro canvas (Ctrl/Cmd+V). The links between the fragment's own nodes come along (prep -> LLM -> build queries -> split queries -> Openverse -> Commons -> pick photo, and the model sub-node). n8n drops any link to a node outside the pasted set, so wiring to existing nodes is done by hand. If step 2 is already on the canvas, delete it first or paste `workflows/step3-search-photos.json` and link "Image: build queries" to "Image: split queries" by hand.
-2. **Credentials**: "Anthropic: image extract model" uses the same credential as the three existing model nodes: `anthropicApi` id `Fy3gBIA4bOXd96pw` ("Anthropic account"). If n8n shows the credential as missing after paste, select "Anthropic account" again. The model is `claude-haiku-5-5` with `maxTokensToSample` 1000 and **Thinking Mode: Disabled** (the request carries `thinking: {type: "disabled"}`). Keep thinking off, or raise the token limit with it: Claude Haiku 5.5 thinks by default when the option is unset, and thinking tokens count toward the limit, so a 1000-token cap could be used up before any JSON is written. The two search nodes need **no credential** (an Openverse OAuth2 credential is optional, see "Openverse registration"). There is no WordPress access yet.
-3. **Input**: the single item that **Render WP blocks** outputs: `{title, slug, excerpt, content, seo_title, meta_description, focus_keyphrase, word_count}`. Other shapes are auto-detected, including the writer's post JSON (`summary`, `sections[]`, ...). `TITLE_PATH` and `BODY_PATH` at the top of "Image: prep post text" can force a path.
-4. **Final placement** (decided in step 6). The plan: steps 2 to 4 (queries, search and pick, download) only read (the pick also leaves the static data alone), so they can sit inline between **Render WP blocks** and **Live mode?** and return `{...source, image: ...}` so the existing nodes keep reading the same top-level fields. Steps 5 and 6 (upload to the media library, set the featured image) write to WordPress, so they belong on the **Live mode? true branch**; before Live mode? they would upload media on test runs too. Either put them before **WordPress: create draft** and add `featured_media: $json.featured_media` to its `jsonBody` (today the body has no `featured_media`), or after it, with a `POST /wp-json/wp/v2/posts/{id}` that sets `featured_media`. Both ways need a change to the existing nodes.
-5. **Still do NOT put the fragment inline.** "Image: pick photo" nests the post under `source`, so `$json.title` and the other fields would be empty in "WordPress: create draft". To try it on real runs now, leave it unconnected and test it with pinned data, or connect it as a **side branch**: add a second link from the Render WP blocks output to "Image: prep post text" and leave "Image: pick photo" unconnected. With `executionOrder: v1`, n8n runs sibling branches top to bottom by canvas position, so the fragment must sit **below** the main row: below **Live mode?** (y 200). Merging the JSON as is gives that (y 1040). When pasting in the editor, click an empty spot below the main row first, because the paste lands where you last clicked. Then the draft branch and the webhook response run first and are unchanged. Placed above, the side branch would run first and the webhook response would wait for it.
-6. **Cost and time per run** (one post): one Haiku call, then one Openverse and one Commons request per query: up to 7 queries, so **up to 14 HTTP requests**. With the batch intervals (Openverse 3.5 s, Commons 1 s) the search adds about 30 s for 7 queries (about 15 s for the usual 4). Every query is searched even when an earlier one already found a photo (the HTTP nodes run once per item; the pick decides afterwards). The anonymous Openverse budget (about 200 requests per day per IP) covers about 28 posts per day; beyond that Openverse answers 429, the post falls back to Commons, and `search_log` shows the 429s. A registered Openverse app removes that limit in practice.
-7. **Wikimedia User-Agent**: both search nodes send `User-Agent: WatchCentroImageFinder/1.0 (+https://watchcentro.com)`. Keep a header like it (app name/version plus a contact URL or e-mail): without one n8n sends `n8n`, and the Wikimedia edge answers 403 to missing or library-default user agents. Step 4's downloads from upload.wikimedia.org need the same header (that host allows about 10 uncached requests per 10 s per contact).
-8. **Static data**: "Image: pick photo" only READS `$getWorkflowStaticData('global').imageFinder.recent`; it writes nothing. n8n saves static data as ONE object per execution (the copy loaded when the run started, plus that run's changes), so any node that writes static data on a run that "Record run id" does not touch (a test run) can erase `liveRunIds` saved by an overlapping live run, and with it the duplicate guard. Step 5 will therefore record a used photo in a small Code node on the **Live mode? true** branch (a run that already saves static data), after the featured image is set. Overlapping live runs already share this last-writer-wins risk for `liveRunIds` today; the fragment adds nothing to it.
-9. **Node references**: the fragment reads no Watch Centro node by name. It reads its own nodes with literal `$('Image: ...')` references (`build queries` -> `prep post text`; `search Commons` -> `split queries`; `pick photo` -> `build queries`, `split queries`, `search Openverse`, `search Commons`), which n8n updates by itself when a node is renamed. Do not remove or reorder the four step-3 nodes: pick photo matches responses to queries through them.
-10. Settings already match: single item per run, `executionOrder: v1`. Node versions are no newer than the ones Watch Centro uses (Code 2, HTTP Request 4.2, Basic LLM Chain 1.9, Anthropic Chat Model 1.6, Sticky Note 1). No node name or id collides with Watch Centro (`npm test` checks against the export when it is available).
-11. **Nothing in the fragment stops the workflow**: the LLM and both HTTP nodes have `onError: continueRegularOutput`, and the Code nodes catch everything; a failure ends up in `extract_error`, `search_log` or `image_error`.
+`workflows/step4-6-upload-attach.json` (12 nodes, part of `image-finder.json`). Every node name starts with "Image: ".
+
+**Licence cross-check (closes the step 3 known limit).** Openverse's copy of a Commons file has no `Restrictions`,
+`NonFree` or licence-review data. "Image: plan licence check" walks the pick and then its alternates in order. A
+Wikimedia-sourced Openverse row (source Wikimedia Commons, an upload.wikimedia.org file or a `curid` landing URL) is
+fine without a lookup when this run's Commons search already returned that page. Otherwise its page id goes on a
+list. The walk stops at the first row that needs no lookup. All listed ids go in **one** imageinfo request
+(`action=query&pageids=a|b&prop=imageinfo&iiprop=url|size|mime|extmetadata`, same User-Agent and extmetadata fields as
+step 3). "Image: confirm licence" re-applies the step 3 rules, copied verbatim; a unit test keeps the copies identical:
+
+- CC0, public domain, CC BY or CC BY-SA only, with no NC/ND and no NonFree
+- the licence fields agree
+- no PD-logo or PD-shape template, no `personality` restriction
+- the Commons page shows the same file
+
+The first row that passes is used, with licence and creator taken from Commons. A row that fails, cannot be looked
+up, or comes back from a failed lookup is skipped. When no row passes, the post gets no image. Alternates carry the full
+step 3 image shape, so no change to pick photo was needed.
+
+Why this design: it adds at most one request per post, needs no loop, and an outage fails closed: no image, never an
+unchecked one.
+
+When step 2 failed (for example an Anthropic error) and no watch is known, the plan node drops the photo. This is
+`USE_PHOTO_WITHOUT_WATCHES = false`, so an LLM outage never puts a random generic wristwatch on a post.
+
+**Download** ("Image: download photo", HTTP Request 4.2):
+- GET `$json.image.file_url` with the step 3 User-Agent and a 30 s timeout. Commons files are already the 1920 px
+  thumbnail.
+- The response format is *file* into binary property `photo`. fullResponse stays off, so the item keeps its json.
+- "Image: photo OK?" then requires the binary's `mimeType` (taken from the response Content-Type, not the URL) to be
+  image/jpeg, image/png or image/webp, and `bytes` to be at most 15 MB. n8n has no download size cap, so this check
+  can only run after the download.
+
+**Upload** ("Image: upload to WordPress"):
+- `POST https://watchcentro.com/wp-json/wp/v2/media`, predefined credential type `wordpressApi` "WatchCentro"
+  (`LPEXDGdEBrfFA7NC`, the same as create draft).
+- Body content type *n8n Binary File* from `photo`.
+- Headers `Content-Type: {{ $binary.photo.mimeType }}` and `Content-Disposition: attachment; filename="<download_filename>"`.
+- 60 s timeout.
+
+These follow `WP_REST_Attachments_Controller::upload_from_data` (verified in wordpress-develop trunk, see
+`test/e2e/README.md`):
+- Only a plain, case-sensitive `filename=` is read. `filename*=` is ignored.
+- The stored MIME type comes from the file extension plus byte sniffing, so the name is kept to `[A-Za-z0-9._-]` with the
+  right extension (`confirm licence` rebuilds it).
+- No Content-MD5 is sent.
+- Success is 201 with `{id, source_url, media_details, ...}`.
+- Failures (401 `incorrect_password`, 403 `rest_cannot_create`, 413 nginx HTML, 500 `rest_upload_sideload_error`) become
+  error items (`onError: continueRegularOutput`).
+
+"Image: uploaded?" passes only items with a numeric `id`. It also guards against a failed upload producing a
+`.../media/` URL, which would be the create route.
+
+**Alt text and caption** ("Image: set alt text and caption"): `POST .../wp/v2/media/{{ $json.id }}` with the JSON
+`media_update` that confirm licence built:
+- `alt_text`: plain text. WordPress runs it through sanitize_text_field, which strips tags and `%xx`.
+- `caption`: the credit HTML.
+- `title`: the plain photo title.
+- `description`: the credit plus a source link. `<a href>` survives kses for every role.
+
+The node refers to "Image: confirm licence", never to the upload node: in n8n 2.42.5, a parameter expression that
+refers to a node holding an error item fails silently. If this update fails, the featured image is still used.
+
+**Hand back** ("Image: hand back post", Code). It always outputs exactly one item per post: the Render WP blocks item
+with every field byte-identical (title, slug, excerpt, seo_title, meta_description, focus_keyphrase, word_count, and
+content when no photo is attached). It also adds:
+
+- `featured_media`: the media id, set **only** when the upload succeeded.
+- `content`: when a photo is attached, the original content + `"\n\n"` + one small-print paragraph, the same markup as
+  Render WP blocks' disclaimer:
+  ```
+  <!-- wp:paragraph {"fontSize":"small"} -->
+  <p class="has-small-font-size">Photo: <a href="LANDING">TITLE</a> by <a href="CREATOR_URL">CREATOR</a>, <a href="LICENSE_URL">LICENCE</a>, via SOURCE.</p>
+  <!-- /wp:paragraph -->
+  ```
+  Every value is HTML-escaped. Only absolute http(s) URLs with a plain host are linked; anything else becomes plain text.
+  CC0 and public domain photos with no known author leave out "by ...". There are no em dashes.
+- `image_report`: `{status: attached | no_image | failed, reason, media_id, source_url, credit_text, license_name,
+  landing_url, provider, photo_title, alt_text_set, licence_check, search_summary, extract_error}`.
+  - `no_image`: nothing usable was found, the licence check rejected everything, or the LLM failed.
+  - `failed`: download, type/size check or upload failed.
+  - `attached` with a non-empty `reason`: the alt text update failed.
+
+`pairedItem` is `{item: 0}`, so `$('Render WP blocks').item` and `.first()` keep working after it. The e2e checks this
+through create draft. Once a photo is attached, its keys go into static data `imageFinder.recent`, which step 3 reads
+for its "recently used" penalty. The node never throws.
+
+## Integration (for the agent that owns Watch Centro)
+
+The entire image chain runs on the **Live mode? true** branch, so test runs never call Haiku, Openverse, Commons or the
+media library. The only edit to an existing node is one line in "WordPress: create draft".
+
+1. **Paste** all of `workflows/image-finder.json` onto the canvas. Click an empty spot first, because the paste lands
+   where you last clicked. The fragment's internal links come along.
+2. **Rewire** (three link changes):
+   - **Remove** the link `Live mode?` (output **true**) -> `WordPress: create draft`.
+   - **Add** `Live mode?` (output **true**) -> `Image: prep post text`.
+   - **Add** `Image: hand back post` -> `WordPress: create draft`.
+
+   Leave `Live mode?` false -> `Respond: test draft` and everything after create draft (`Record run id`,
+   `Respond: draft created`) as they are. Those read `$json.id`, which comes from WordPress, and
+   `$('Render WP blocks').first()`, which is unchanged.
+3. **Create draft JSON body**: add exactly one line after `excerpt` (a unit test applies this to a copy of the real
+   node; the e2e runs that copy):
+
+   Before:
+   ```
+   ={{ JSON.stringify({
+     title: $json.title,
+     slug: $json.slug,
+     content: $json.content,
+     excerpt: $json.excerpt,
+     status: 'draft',
+     ...
+   ```
+   After:
+   ```
+   ={{ JSON.stringify({
+     title: $json.title,
+     slug: $json.slug,
+     content: $json.content,
+     excerpt: $json.excerpt,
+     featured_media: $json.featured_media,
+     status: 'draft',
+     ...
+   ```
+   With no image, `featured_media` is undefined and `JSON.stringify` drops the key, so the request is byte-identical to
+   today's. Hand back only ever sets a positive integer. A non-integer would get 400 `rest_invalid_param` and stop the
+   run, because create draft has no onError. An id that is not an image attachment would not: WordPress ignores it and
+   creates the post with `featured_media` 0.
+4. **Credentials to check after paste:**
+   - "Anthropic: image extract model" uses `anthropicApi` "Anthropic account" (`Fy3gBIA4bOXd96pw`).
+   - "Image: upload to WordPress" and "Image: set alt text and caption" use `wordpressApi` "WatchCentro"
+     (`LPEXDGdEBrfFA7NC`). The WordPress user needs `upload_files`; Author or higher has it. A Contributor gets
+     403 `rest_cannot_create`.
+   - Optional: an Openverse OAuth2 credential on "Image: search Openverse" (see "Openverse registration").
+   - If n8n shows a credential as missing, select it again.
+5. **Settings**: the workflow must keep `binaryMode: separate`, which is the default. In `combined` mode, Code nodes
+   see plain json and the binary moves to `json._files`, which breaks the chain. Also keep `executionOrder: v1`.
+6. **Upload size**: WordPress itself has no size limit for these uploads on a single site; the web server does. nginx
+   defaults to `client_max_body_size 1m`, which would reject most photos with HTML 413. The draft is still created,
+   with `image_report.reason` "upload to WordPress failed: HTTP 413". Please confirm watchcentro.com's nginx
+   `client_max_body_size` and PHP `upload_max_filesize` / `post_max_size` allow at least 5 MB (Commons photos are
+   1920 px thumbnails, typically 0.3 to 1.5 MB).
+7. **Request budget per live post**:
+   - 1 Haiku call
+   - up to 7 Openverse and 7 Commons searches (usually 4 + 4)
+   - 0 or 1 Commons imageinfo lookup
+   - 1 photo download
+   - 1 media upload
+   - 1 media update
+   - then the existing create draft
+
+   That is at most 19 requests before create draft. Time is about 15 to 35 s plus the upload. Failures add no retries
+   except the LLM node's one retry.
+8. **What a test run does**: nothing image-related. Live mode? false goes to Respond: test draft as today, and the
+   e2e checks that no image node runs and no mock gets a request.
+9. **Single item**: Watch Centro sends one post per run, and the chain is built for that. "Image: hand back post" is fed
+   by four branches without a Merge node. With one item it runs exactly once, which the e2e checks for every outcome.
+   With several items in one execution it would run once per branch that carries items. Do not feed it batches.
+10. **Nothing in the chain stops the workflow**:
+    - The LLM and every HTTP node use `onError: continueRegularOutput`.
+    - The Code nodes catch every error inside their JavaScript. They have no `onError`: a failure outside the
+      body (task runner timeout or crash, out of memory) would still stop the run before create draft, as it would
+      for any Code node in Watch Centro. (Setting `onError` on them would not help: the error item has no post fields.)
+    - Every failure (LLM, search, licence lookup, download, type/size, upload, alt text) ends in hand back with the
+      original post and an `image_report` that says why.
+    - The draft is always created, barring the Code node runtime failures above.
+11. **Orphan media**: if the upload succeeds but create draft then fails, the attachment stays in the media library,
+    unattached to a post. Create draft has no onError, so the run stops and the webhook gets no response. The same
+    happens if a run is retried after an upload. A third case: the upload times out (60 s) or the connection drops
+    after WordPress has already stored the file. Hand back then reports `failed` with `media_id` null, the draft is
+    created without a featured image, and the attachment is unattached; option (b) cannot find it, only (a) can
+    (search the media library for the file name, `image_report.download_filename`). Options:
+    - (a) Clean up by hand: Media > filter "Unattached".
+    - (b) An error workflow that reads `$('Image: hand back post').first().json.image_report.media_id` and sends
+      `DELETE /wp-json/wp/v2/media/<id>?force=true`.
+    - (c) Move the image chain after create draft and attach with `POST /wp/v2/posts/<id>` `{featured_media, content}`.
+      This avoids orphans but needs a second write and more changes to existing nodes.
+
+    We recommend (a), with (b) if it happens often.
+12. **Download safety**: `file_url` comes from Openverse/Commons data, so "Image: confirm licence" only lets a photo
+    through when its `file_url` is `https://upload.wikimedia.org/...` or `https://<x>.staticflickr.com/...`; any
+    other URL (plain http, internal addresses, other hosts) is skipped like a bad licence and the next alternate is
+    tried. The download node follows redirects (n8n 4.2 cannot turn this off for GET), so we also recommend
+    n8n's SSRF protection (`N8N_SSRF_PROTECTION`-style settings) on the instance. The 15 MB / type check in
+    "Image: photo OK?" runs AFTER the download: HTTP Request has no maximum response size, so a huge file is fully
+    fetched (bounded by the 30 s timeout) before it is rejected. Commons picks use 1920 px thumbnails, which keeps
+    normal files small.
+12b. **Wikimedia User-Agent**: the search, lookup and download nodes send
+    `User-Agent: WatchCentroImageFinder/1.0 (+https://watchcentro.com)`. Keep an app name and a contact; the Wikimedia
+    edge answers 403 to library-default agents.
+13. **Static data**: "Image: hand back post" writes `imageFinder.recent` only on the live branch, where "Record run id"
+    also saves static data. "Image: pick photo" only reads it.
+14. **Versions and names**: Code 2, HTTP Request 4.2, IF 2.2, Basic LLM Chain 1.9, Anthropic Chat Model 1.6, Sticky
+    Note 1. None is newer than Watch Centro's. No node name or id collides with the export (checked by `npm test`). The
+    fragment reads no Watch Centro node by name; its `$('Image: ...')` references are to its own nodes. Do not rename
+    or remove fragment nodes.
+15. **Input**: the single item that Render WP blocks outputs: `{title, slug, excerpt, content, seo_title,
+    meta_description, focus_keyphrase, word_count}`. Other shapes are auto-detected by "Image: prep post text"
+    (`TITLE_PATH` / `BODY_PATH` at the top force a path).
 
 ## Files
 
@@ -322,28 +529,31 @@ should decide where (for example "via Openverse" in the credit, or a site-level 
 | `src/build-image-queries.js` | Body of "Image: build queries" (config at the top: `MAX_QUERIES`, `GENERIC_QUERY`, `DENYLIST`) |
 | `src/split-queries.js` | Body of "Image: split queries" |
 | `src/pick-photo.js` | Body of "Image: pick photo" (config at the top) |
-| `build.mjs` | Writes the three `workflows/*.json` files from `src/` and validates them (names, ids, type versions, connections, `$()` references, no em dash). The HTTP node parameters are defined here. |
-| `workflows/image-finder.json` | **The deliverable**: steps 2 + 3, n8n paste format `{nodes, connections, pinData}` |
-| `workflows/step2-extract-watches.json`, `workflows/step3-search-photos.json` | The same nodes per step |
+| `src/plan-licence-check.js`, `src/confirm-licence.js` | Bodies of "Image: plan licence check" and "Image: confirm licence" |
+| `src/hand-back-post.js` | Body of "Image: hand back post" (credit block, image_report, featured_media) |
+| `build.mjs` | Writes the four `workflows/*.json` files from `src/` and validates them (names, ids, type versions, connections, `$()` references, no em dash). The HTTP node parameters are defined here. |
+| `workflows/image-finder.json` | **The deliverable**: steps 2 to 6, n8n paste format `{nodes, connections, pinData}` |
+| `workflows/step2-extract-watches.json`, `workflows/step3-search-photos.json`, `workflows/step4-6-upload-attach.json` | The same nodes per step |
+| `test/fixtures/watchcentro/` | Copy of the real "WordPress: create draft" node and the Watch Centro node names/settings (tests compare them with the export when it is present) |
 | `test/unit/` | Unit tests. The Code bodies run in a vm with emulated `$input` / `$()` / `$getWorkflowStaticData` |
-| `test/e2e/` | Real n8n 2.x + mock Anthropic, Openverse and Commons APIs (see `test/e2e/README.md`) |
+| `test/e2e/` | Real n8n 2.x + mock Anthropic, Openverse, Commons and WordPress APIs (see `test/e2e/README.md`) |
 | `test/fixtures/` | Writer posts and their real "Render WP blocks" output; Openverse and Commons responses (`openverse/`, `commons/`, each with a `manifest.json` naming the source they follow); real n8n HTTP Request failure items (`n8n/`) |
 
 ## Build and test
 
 ```sh
-npm run build        # regenerate the three workflows/*.json files after editing src/ or build.mjs
+npm run build        # regenerate the four workflows/*.json files after editing src/ or build.mjs
 npm test             # unit tests (Node 22+, no install); also fails if a generated file is out of date
 ```
 
 End to end in a real n8n (2.42.5 tested; it needs Node 24). The one-time install is in `test/e2e/README.md`:
 
 ```sh
-N8N_BIN=/abs/path/n8n-v2/n8n.sh E2E_N8N_HOME=/abs/scratch/n8n-e2e-home npm run test:e2e   # about 4 to 5 min
+N8N_BIN=/abs/path/n8n-v2/n8n.sh E2E_N8N_HOME=/abs/scratch/n8n-e2e-home npm run test:e2e   # about 8 min; files run one at a time (one n8n home)
 ```
 
-This runs the smoke test, `test/e2e/step2.e2e.mjs`, `test/e2e/http-request.e2e.mjs` (the HTTP Request 4.2 facts step 3 relies on)
-and `test/e2e/step3.e2e.mjs`. Without `N8N_BIN` the e2e tests are skipped.
+This runs the smoke test, `test/e2e/step2.e2e.mjs`, `test/e2e/http-request.e2e.mjs` (the HTTP Request 4.2 facts step 3 relies on),
+`test/e2e/step3.e2e.mjs` and `test/e2e/steps4-6.e2e.mjs`. Without `N8N_BIN` the e2e tests are skipped.
 
 Step 2 runs the real Render WP blocks code on a fixture writer post, then the step 2 nodes exactly as they are in the JSON, against a mock Anthropic API. It covers six cases:
 
@@ -356,7 +566,7 @@ Step 2 runs the real Render WP blocks code on a fixture writer post, then the st
 
 It also checks that the API received `claude-haiku-5-5`, `max_tokens` 1000, `thinking: {type: "disabled"}` and the cleaned post text: no tags, no `wp:` comments, entities decoded.
 
-Step 3 runs the real Render WP blocks code, then all 10 nodes of `workflows/image-finder.json` (only the two API base URLs are
+Step 3 runs the real Render WP blocks code, then the 10 step 2 + 3 nodes of `workflows/image-finder.json` (only the two API base URLs are
 rewritten to the local mocks), then a check node that reads `$('Render WP blocks').item` from each pick item. Cases:
 
 - (a) Openverse hit at model level, with the real batch intervals (requests at least 3.3 s apart); the static data (with `liveRunIds`) is unchanged
@@ -370,6 +580,41 @@ rewritten to the local mocks), then a check node that reads `$('Render WP blocks
 - (i) the Commons copy of a file carries the `personality` restriction: the Openverse copy of the same file is not used either
 
 Each case also checks what the mocks received: the exact query parameters (no `mature`, `extension` or `maxlag`), `User-Agent` and `Accept` headers.
+
+Steps 4-6 (`test/e2e/steps4-6.e2e.mjs`) run the whole live path with Watch Centro's settings (`binaryMode: separate`,
+`executionOrder: v1`):
+
+- Normalize input stub, then the real Render WP blocks code.
+- A `Live mode?` IF with Watch Centro's condition.
+- The full fragment.
+- A copy of the real "WordPress: create draft" node, patched by `patchCreateDraft`.
+- A Respond-like node reading `$json.id` and `$('Render WP blocks')`.
+
+Every host is rewritten to a mock: Anthropic, Openverse, Commons (search, imageinfo lookup and the photo files) and
+WordPress (`test/e2e/mock-wordpress.mjs`, Basic auth with the imported "WatchCentro" credential). The test copy changes
+one thing in the fragment: the download URL is mapped to the Commons mock's `/files/` route, because URLs inside item
+data are not rewritten by the harness.
+
+Cases:
+
+- (a) Full success. Exactly one download, with the User-Agent. The media create gets `Content-Type: image/jpeg`,
+  `Content-Disposition: attachment; filename="rolex-submariner-date-watch-openverse-ed296e8f1cb3.jpg"`, and the exact
+  bytes (length and sha256 of the served file). The alt/caption/title/description body is as specified. The draft
+  body has `featured_media`, the credit paragraph after the unchanged content, and every other field as Render
+  produced it. Static data records the photo.
+- (b) Nothing usable: no download and no media call. The draft has no `featured_media` key and the content is unchanged.
+- (c) Download 404, and (c2) an HTML page served with status 200: same as (b), with the reason in `image_report`.
+- (d) Upload 401, 413 (nginx HTML) and 403: the draft is created without an image, and no alt text call is made.
+- (e) Alt text update 500: the draft still gets `featured_media` and the credit; `image_report.alt_text_set` is false.
+- (f1) A Wikimedia-sourced Openverse pick that is not in the Commons search: one imageinfo lookup (exact parameters,
+  User-Agent) confirms it.
+- (f2) The lookup shows CC BY-NC-SA: the pick is rejected and never downloaded. All three Wikimedia page ids went into one
+  lookup; the two it does not return are skipped, and the CC0 Flickr alternate is used.
+- (g) Anthropic 500: no photo is used and the draft is created without one.
+- (h) Test mode (Live mode? false): no fragment node runs, and no mock gets a request.
+
+Every case checks that hand back and create draft each ran exactly once, and that `.item` pairing reaches Render WP
+blocks.
 
 ## Notes and known limits
 
@@ -389,13 +634,29 @@ Step 3:
 - Openverse's Flickr rows are at most 1024 px wide (Openverse stores Flickr's "large" size), so they never get the +10 width bonus, and Flickr portraits always fail the 1000 px minimum. Commons copies of the same photo are often larger.
 - Openverse returns no description, so a row that matched only in its description fails the relevance check.
 - `logo`, `homage`, `replica` and the other exclusion terms reject a photo wherever they appear in its text, also in an innocent sentence of a Commons description.
-- "Recently used" has no effect until step 5 records used photos (the pick only reads the list). Static data is not saved for editor test runs.
-- An Openverse row hosted on Wikimedia is checked against Commons only when the Commons search of the same post returned that file
-  (veto). Otherwise its Commons `Restrictions` and NonFree flags are unknown: step 4 should look such a pick up on Commons
-  (`action=query&pageids=<curid>&prop=imageinfo&iiprop=extmetadata`) before uploading it, and fall back to an alternate if it fails.
+- "Recently used": hand back post records attached photos (live runs only); the pick only reads the list. Static data is not saved for editor test runs.
+- An Openverse row hosted on Wikimedia is checked against Commons in step 4: by the same run's Commons search, otherwise
+  by one imageinfo lookup. If it fails or cannot be confirmed, the next alternate is tried (closed, see "Steps 4 to 6").
 - The other-brand check only knows `WATCH_BRANDS` and the post's own brands, and only reads the title. Exclusion terms also match
   inside tags, so an innocent tag such as "cyclone" (contains "clone") rejects a photo. Rejections are cheap here; wrong photos are not.
 - Weak generic photos (a strap, a watch box) are still picked when nothing better exists at the generic level; they score -15.
 - The recent-use penalty (-40) only reorders photos of the same query: a recently used photo for the best query still beats a fresh one for a less specific query.
-- Credit lines name the original source ("via Flickr", "via Wikimedia Commons"), not Openverse; Openverse's terms ask for a "made using Openverse" notice somewhere (step 5).
-- Step 4 should download `file_url` with the same User-Agent, and may fall back to `alternates` when a download fails.
+- Credit lines name the original source ("via Flickr", "via Wikimedia Commons"), not Openverse. Openverse's terms ask for a
+  "made using Openverse" notice somewhere. The fragment does not add one; a site-level note (for example in the footer or
+  on an "About our photos" page) is the suggested place. This is a decision for the site owner.
+
+Steps 4 to 6:
+
+- Only the picked photo is downloaded. A download, type or upload failure does not fall back to an alternate: the post
+  goes out without an image. This keeps the chain loop-free and within the request budget. Alternates are only used
+  by the licence cross-check.
+- The 15 MB limit is checked after the full download, because n8n's HTTP Request has no maximum size. Commons picks are
+  1920 px thumbnails. Openverse rows from other hosts are usually at most 1024 px (Flickr), so this is theoretical.
+- Upload limits on watchcentro.com (nginx `client_max_body_size`, PHP) are unknown. See integration note 6.
+- Orphan media when create draft fails after a successful upload. See integration note 11.
+- The real services (watchcentro.com, Openverse, Commons) were not reachable from the build machine. WordPress
+  behaviour follows wordpress-develop trunk source (8a5b626, 2026-10-09) as emulated by the mock. Fields that only
+  exist in WordPress 7.x are not used.
+- WordPress makes intermediate sizes, and a `-scaled` copy above 2560 px. The credit uses the original title and the
+  landing page, not the WordPress URL.
+- Batches: the chain assumes one post per execution (integration note 9).

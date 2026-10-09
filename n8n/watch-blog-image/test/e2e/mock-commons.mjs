@@ -6,6 +6,7 @@
 //
 // Routes
 //   GET|POST /w/api.php        action=query&generator=search&gsrsearch=...: fixture keyed by gsrsearch
+//                              action=query&pageids=...: fixture keyed by "pageids:<ids>" (default: missing pages)
 //   GET|HEAD /files/<name>     generated JPEG/PNG (see mock-http.mjs), e.g. step 4 downloads
 //   GET /__mock/requests, POST /__mock/reset
 //
@@ -223,6 +224,18 @@ export async function startCommonsMock(opts = {}) {
         return ctx.respond(apiError('missingparam', 'The "gsrsearch" parameter must be set.'));
       }
       if (last(query.formatversion) !== '2') entry.warning = 'formatversion is not 2: fixtures are formatversion=2 shapes';
+      // Step 4 licence lookup: action=query&pageids=1|2&prop=imageinfo (no generator). Fixture key
+      // "pageids:<value as sent>"; default: every id answered as a missing page, like MediaWiki.
+      const pageids = last(query.pageids);
+      if (pageids !== undefined && last(query.generator) === undefined) {
+        const ids = String(pageids).split('|').filter(Boolean);
+        entry.pageids = ids;
+        return ctx.respondFor(`pageids:${pageids}`, {
+          defaultSpec: { json: { batchcomplete: true, query: { pages: ids.map((id) => ({ pageid: Number(id), missing: true })) } } },
+          statusDefaults: STATUS_DEFAULTS,
+          transform: (obj, status) => (status === 200 && !obj.error ? shapeResult(obj, query, entry) : obj),
+        });
+      }
       const gsrsearch = last(query.gsrsearch) ?? '';
       const fixtures = ctx.fixtures;
       const resolveShortcut = (spec) => (spec === 'maxlag' ? 'error-maxlag.json' : spec);

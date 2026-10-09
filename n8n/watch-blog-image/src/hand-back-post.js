@@ -6,7 +6,7 @@
 //   featured_media: the media id, ONLY when the upload succeeded (absent otherwise, so JSON.stringify drops it)
 //   content:        source.content + a small-print credit paragraph, ONLY when the image is attached
 //   image_report:   {status: attached | no_image | failed, reason, media_id, source_url, credit_text, license_name,
-//                    landing_url, provider, photo_title, alt_text_set, licence_check, search_summary, extract_error}
+//                    landing_url, provider, photo_title, download_filename, alt_text_set, licence_check, search_summary, extract_error}
 // pairedItem {item: i} keeps .item references to Render WP blocks working in the nodes after it.
 // Which steps ran for an item is read with itemMatching (a node that is not on the item's path throws); with a
 // single post, an executed node is on the path. A failed alt text update keeps the featured image.
@@ -42,7 +42,7 @@ function cleanText(v, max) {
 // quotes, angle brackets, backslashes and invisible direction characters.
 function safeUrl(v) {
   if (typeof v !== 'string') return '';
-  const u = v.trim();
+  const u = v.replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, '');
   if (!u || u.length > 2000) return '';
   if (/[\u0000- \u007f-\u009f"<>\\`\u200b-\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069\ufeff]/.test(u)) return '';
   const m = u.match(/^https?:\/\/([^/?#]*)(?:[/?#]|$)/i);
@@ -85,6 +85,8 @@ function bodyText(body) {
   if (/<[a-z!]/i.test(body)) return '';
   return cleanText(body, 120);
 }
+// Tags stripped from an HTML error description (the WordPress fatal error page), one short line.
+const htmlPlain = v => (typeof v === 'string' ? cleanText(v.replace(/<[^>]*>/g, ' '), 120) : '');
 // An n8n HTTP Request error (AxiosError.toJSON() without credentials, NodeApiError with credentials, or a string)
 // -> short label such as "HTTP 401 rest_cannot_create: Sorry, ...", "timeout", "connection refused".
 function errorLabel(err) {
@@ -102,7 +104,7 @@ function errorLabel(err) {
     break;
   }
   if (status) {
-    const text = bodyText(body) || bodyText(err.description);
+    const text = bodyText(body) || bodyText(err.description) || htmlPlain(err.description);
     return 'HTTP ' + status + (text ? ' ' + text : '');
   }
   const all = texts.concat([String(err.code || '')]).join(' ');
@@ -224,7 +226,8 @@ function makeReport(post) {
     status: 'failed', reason: '', media_id: null, source_url: '',
     credit_text: img ? cleanText(img.credit_text, 400) : '', license_name: img ? cleanText(img.license_name, 60) : '',
     landing_url: img ? safeUrl(img.landing_url) : '', provider: img ? cleanText(img.provider, 20) : '',
-    photo_title: img ? cleanText(img.title, 150) : '', alt_text_set: null,
+    photo_title: img ? cleanText(img.title, 150) : '',
+    download_filename: img ? String(img.download_filename || '').replace(/[^A-Za-z0-9._-]/g, '').slice(0, 120) : '', alt_text_set: null,
     licence_check: licenceSummary(post && post.licence_check), search_summary: searchSummary(post && post.search_log),
     extract_error: cleanText(post && post.extract_error, 300),
   };

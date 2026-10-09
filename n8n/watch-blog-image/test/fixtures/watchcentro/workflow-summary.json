@@ -1,0 +1,39 @@
+{
+  "names": [
+    "Webhook: raw digest",
+    "Normalize input",
+    "Anthropic: sanitizer model",
+    "Sanitizer (LLM)",
+    "Parse + code checks (sanitizer)",
+    "Sanitizer passed?",
+    "Anthropic: writer model",
+    "Writer (LLM)",
+    "Parse writer output",
+    "Anthropic: reviewer model",
+    "Reviewer (LLM)",
+    "Parse review + code checks",
+    "Review passed?",
+    "Render WP blocks",
+    "WordPress: create draft",
+    "Respond: draft created",
+    "Respond: blocked",
+    "Notes",
+    "Not a duplicate?",
+    "Respond: duplicate",
+    "Live mode?",
+    "Respond: test draft",
+    "Record run id"
+  ],
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "live_mode_true": [
+    {
+      "node": "WordPress: create draft",
+      "type": "main",
+      "index": 0
+    }
+  ]
+}

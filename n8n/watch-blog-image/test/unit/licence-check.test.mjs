@@ -205,6 +205,25 @@ test('confirm: every step 3 Commons rule is re-applied (each rejects, the Flickr
   assert.equal(out.image.id, image().id);
 });
 
+test('confirm: SSRF guard, only https file URLs on upload.wikimedia.org / *.staticflickr.com are downloaded (review fix)', async () => {
+  const bad = ['http://live.staticflickr.com/1/2_ab.jpg', 'https://169.254.169.254/latest/meta-data', 'http://127.0.0.1:5678/x.jpg',
+    'https://evil.example/x.jpg', 'https://staticflickr.com.evil.example/x.jpg', 'https://upload.wikimedia.org.evil/x.jpg', 'ftp://upload.wikimedia.org/x.jpg'];
+  for (const file_url of bad) {
+    const flickrBad = { ...FLICKR_ALT, id: 'bad-1', file_url };
+    const { out } = await planAndConfirm(pickJson(flickrBad, [FLICKR_ALT]), {});
+    contract(out);
+    assert.equal(out.image.id, FLICKR_ALT.id, file_url);
+    assert.equal(out.licence_check.checked[0].result, 'rejected');
+    assert.equal(out.licence_check.checked[0].reason, 'file URL not on the download allowlist');
+    const { out: none } = await planAndConfirm(pickJson(flickrBad, []), {});
+    contract(none);
+    assert.equal(none.image, null, file_url);
+    assert.match(none.image_error, /download allowlist/);
+  }
+  const { out } = await planAndConfirm(pickJson({ ...FLICKR_ALT, file_url: 'https://farm66.staticflickr.com/65535/1_ab_b.jpg' }, []), {});
+  assert.equal(out.image.id, FLICKR_ALT.id);
+});
+
 test('confirm: missing page, another file, no file info and a missing page id are not confirmable', async () => {
   const cases = [
     [lookupAnswer({ pageid: 148213907, missing: true }), 'file not found on Commons (Commons lookup)'],

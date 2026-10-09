@@ -10,7 +10,7 @@
 //   -> Parse + code checks (sanitizer)   fixture: {sanitized: {data_window}}, read by the Render code via $()
 //   -> Fixture: writer output             fixture: the "Parse review + code checks" item {ok, stage, post, ...}
 //   -> Fixture: Render WP blocks          the REAL Watch Centro "Render WP blocks" jsCode, verbatim
-//   -> the 10 nodes of workflows/image-finder.json (prep -> LLM -> build -> split -> Openverse -> Commons -> pick)
+//   -> the 10 step 2 + 3 nodes of workflows/image-finder.json (prep -> LLM -> build -> split -> Openverse -> Commons -> pick)
 //   -> E2E: check pairing                 runOnceForEachItem: $('Fixture: Render WP blocks').item from each pick item
 //
 // Batching: cases (a) and (h) keep the fragment's real intervals (Openverse 3500 ms, Commons 1000 ms) and
@@ -25,6 +25,8 @@ import { WRITER_POSTS } from '../fixtures/writer-posts.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const FRAGMENT_FILE = path.join(ROOT, 'workflows/image-finder.json');
+const STEP2_FILE = path.join(ROOT, 'workflows/step2-extract-watches.json');
+const STEP3_FILE = path.join(ROOT, 'workflows/step3-search-photos.json');
 const RENDERED = JSON.parse(fs.readFileSync(path.join(ROOT, 'test/fixtures/rendered-posts.json'), 'utf8'));
 const RENDER_FILE = fs.readFileSync(path.join(ROOT, 'test/fixtures/render-wp-blocks.js'), 'utf8');
 const RENDER_CODE = RENDER_FILE.slice(RENDER_FILE.indexOf('\n') + 1).trimEnd();
@@ -74,7 +76,14 @@ const code = (id, name, x, jsCode, extra = {}) => ({
 // renderMode 'real': the Watch Centro Render code on the steel post. 'two': a fixture node emitting two
 // rendered posts (steel and dress), to run two posts through one execution.
 function testWorkflow({ renderMode = 'real', intervals } = {}) {
-  const fragment = JSON.parse(fs.readFileSync(FRAGMENT_FILE, 'utf8'));
+  // Steps 2 + 3 only: the nodes of image-finder.json that come from the step 2 and step 3 files (steps 4-6 have
+  // their own e2e, test/e2e/steps4-6.e2e.mjs).
+  const full = JSON.parse(fs.readFileSync(FRAGMENT_FILE, 'utf8'));
+  const keep = new Set([STEP2_FILE, STEP3_FILE].flatMap(f => JSON.parse(fs.readFileSync(f, 'utf8')).nodes.map(n => n.name)));
+  const fragment = {
+    nodes: full.nodes.filter(n => keep.has(n.name)),
+    connections: Object.fromEntries(Object.entries(full.connections).filter(([k]) => keep.has(k) && k !== PICK)),
+  };
   if (intervals) {
     for (const n of fragment.nodes) {
       if (n.name === OPENVERSE) n.parameters.options.batching.batch.batchInterval = intervals[0];

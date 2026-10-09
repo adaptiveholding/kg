@@ -190,7 +190,7 @@ plus the optional `delay_ms`, `stop_reason` and `headers`. `"__default__"` is us
   runs). `n8n execute` runs in mode `cli`, so the harness can check persistence. `import:workflow`
   keeps the stored staticData when the file has none, and replaces it when the file has one.
 
-## HTTP Request 4.2 + wordpressApi facts (n8n 2.42.5 against `mock-wordpress.mjs`, scratch probe, not yet a committed e2e)
+## HTTP Request 4.2 + wordpressApi facts (n8n 2.42.5 against `mock-wordpress.mjs`; now covered by `steps4-6.e2e.mjs`)
 
 - Response format File (`options.response.response = {responseFormat: 'file', outputPropertyName: 'data'}`)
   keeps the INPUT item's json and adds `binary.data` (`mimeType` from the response Content-Type,
@@ -220,3 +220,19 @@ plus the optional `delay_ms`, `stop_reason` and `headers`. `"__default__"` is us
 - A media-update URL built as `.../media/{{ $json.id }}` from an error item becomes `.../media/`, which is the
   CREATE route: WordPress answers 400 `rest_upload_no_content_disposition` (nothing is created), but the
   step must be skipped (IF / Code routing) when the upload failed rather than relying on that.
+
+## Steps 4-6 e2e (`steps4-6.e2e.mjs`)
+
+- WordPress mock is plugged in through the custom `start`/`rewrite` mock option. Its `start` returns `<mock>/wp-json`
+  as the URL, with rewrite `https://watchcentro.com/wp-json`. That way the User-Agent string
+  `(+https://watchcentro.com)` on the search, lookup and download nodes is NOT rewritten. The test keeps a reference
+  to the mock to read `state` (media with bytes/sha256 and the upload headers; posts with `received_featured_media`
+  and `featured_media_result`) after the run.
+- Photo downloads: `image.file_url` comes from item data, which the harness does not rewrite. The test copy of
+  "Image: download photo" maps it to `https://commons.wikimedia.org/files/<host>/<path>`, and the harness rewrites that
+  to the Commons mock. A `"/files/<host>/<path>"` fixture key overrides the generated image (404, HTML...).
+- `mock-commons.mjs` also answers the step 4 imageinfo lookup (`action=query&pageids=...`, no generator). Fixture key
+  `pageids:<ids as sent>` (or a `re:^pageids:` key). By default every id comes back as a missing page.
+- The create-draft node is a copy of the real one from the Watch Centro export (fallback:
+  `test/fixtures/watchcentro/create-draft-node.json`), patched by `build.mjs` `patchCreateDraft`.
+- Cases (a) to (h), about 15 to 30 s each: see the main README, "Build and test".

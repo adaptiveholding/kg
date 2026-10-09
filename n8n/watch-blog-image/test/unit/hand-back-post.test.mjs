@@ -13,7 +13,7 @@ import {
 const { safeUrl, creditHtml, creditBlock, esc, cleanText } = creditHelpers();
 const SOURCE_KEYS = Object.keys(SOURCE);
 const REPORT_KEYS = ['status', 'reason', 'media_id', 'source_url', 'credit_text', 'license_name', 'landing_url', 'provider',
-  'photo_title', 'alt_text_set', 'licence_check', 'search_summary', 'extract_error'];
+  'photo_title', 'download_filename', 'alt_text_set', 'licence_check', 'search_summary', 'extract_error'];
 const CREDIT_148 = 'Photo: <a href="https://commons.wikimedia.org/w/index.php?curid=148213907">Rolex Submariner Date 126610LN</a> ' +
   'by <a href="https://commons.wikimedia.org/wiki/User:Horologium42">Horologium42</a>, ' +
   '<a href="https://creativecommons.org/licenses/by-sa/4.0">CC BY-SA 4.0</a>, via Wikimedia Commons.';
@@ -62,7 +62,7 @@ test('(a) attached: featured_media from the upload, credit paragraph appended, a
     source_url: 'https://watchcentro.com/wp-content/uploads/2026/10/rolex-submariner-116610ln.jpg',
     credit_text: 'Photo: "Rolex Submariner Date 126610LN" by Horologium42, CC BY-SA 4.0, via Wikimedia Commons',
     license_name: 'CC BY-SA 4.0', landing_url: 'https://commons.wikimedia.org/w/index.php?curid=148213907', provider: 'openverse',
-    photo_title: 'Rolex Submariner Date 126610LN', alt_text_set: true,
+    photo_title: 'Rolex Submariner Date 126610LN', download_filename: 'rolex-submariner-date-watch-openverse-ed296e8f1cb3.jpg', alt_text_set: true,
     licence_check: { status: 'confirmed', lookup: 'not needed', checked: [{ provider: 'openverse', id: 'ed296e8f-1cb3-5e22-825d-ddbd552c338c', result: 'used', reason: 'licence confirmed by the Commons search' }] },
     search_summary: 'openverse: 1 search, 1 ok, 4 results, 4 passed; commons: 1 search, 0 ok, 0 results, 0 passed, errors: 1x HTTP 503',
     extract_error: '',
@@ -221,7 +221,7 @@ test('credit block: same small-print paragraph markup as the Render WP blocks di
   assert.ok(SOURCE.content.includes(open));
   assert.ok(SOURCE.content.endsWith(close));
   assert.ok(readText('test/fixtures/render-wp-blocks.js').includes('<!-- wp:paragraph {"fontSize":"small"} -->\\n<p class="has-small-font-size">'));
-  const block = creditBlock(image());
+  const block = creditBlock(image({ license_url: 'https://creativecommons.org/licenses/by-sa/4.0' }));
   assert.equal(block, BLOCK_148);
   assert.ok(block.startsWith(open) && block.endsWith(close));
   // Content stays a balanced list of blocks.
