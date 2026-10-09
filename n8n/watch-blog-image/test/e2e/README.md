@@ -13,6 +13,7 @@ in the HTTP Request nodes before import.
 | `run-workflow.mjs` | Starts the mock, imports the credential (only when it changed) and the workflow, runs `n8n execute`, and prints per-node outputs as JSON. |
 | `smoke.workflow.json` / `smoke.fixtures.json` / `smoke.test.mjs` | Manual Trigger -> Code -> chainLlm + Anthropic model. The test passes when the mock's canned text comes out of the chain. |
 | `step2.e2e.mjs` | Step 2 end to end: the real Watch Centro "Render WP blocks" code on a fixture writer post, then the fragment from `workflows/step2-extract-watches.json` verbatim. Six cases (multi-brand post, no watches, HTTP 500, prose-wrapped JSON, a reply starting with a thinking block, a reply cut off at max_tokens); each result is saved as `$E2E_N8N_HOME/e2e/step2-<case>.result.json`. |
+| `step3.e2e.mjs` | Steps 2 + 3 end to end: the real "Render WP blocks" code, then `workflows/image-finder.json` verbatim (the harness rewrites only the Openverse and Commons base URLs to the mocks), then a check node reading `$('Fixture: Render WP blocks').item` from each pick item. Nine cases: (a) Openverse model-level hit with the real batch intervals, static data left untouched, (b) Openverse 429 on every request, (c) generic-only pick, (d) nothing passes, (e) cross-provider dedupe, (f) Commons pages against relevance order plus a Commons API error and a 503, (g) two posts in one execution, (h) recently used photo penalised (list read, not written), (i) a personality-restricted Commons file vetoes its Openverse copy. Asserts the exact query parameters and headers the mocks received. Results saved as `$E2E_N8N_HOME/e2e/step3-<case>.result.json`. About 2.5 to 3 min. |
 | `mock-http.mjs` | Shared core of the HTTP mocks: JSONL request log, fixtures map, response specs, generated images under `/files/`. |
 | `mock-openverse.mjs` | Mock of `api.openverse.org`: `GET /v1/images/`, `POST /v1/auth_tokens/token/` (client credentials), `POST /v1/auth_tokens/register/`, `GET /v1/rate_limit/`. Bodies and headers from `test/fixtures/openverse/`. |
 | `mock-commons.mjs` | Mock of `commons.wikimedia.org/w/api.php` (`action=query&generator=search&prop=imageinfo`), with the Wikimedia edge User-Agent policy. Bodies and headers from `test/fixtures/commons/`. |
@@ -41,7 +42,7 @@ chmod +x $S/n8n-v2/n8n.sh
 ```sh
 export N8N_BIN=$S/n8n-v2/n8n.sh          # or N8N_BIN=.../n8n/bin/n8n plus N8N_NODE=$N24/bin/node
 export E2E_N8N_HOME=$S/n8n-e2e-home      # n8n user folder: sqlite DB, logs, last workflow
-npm run test:e2e                          # smoke + step 2 + HTTP Request facts; skipped when N8N_BIN is unset
+npm run test:e2e                          # smoke + step 2 + HTTP Request facts + step 3 (about 4 to 5 min); skipped when N8N_BIN is unset
 
 # ad hoc: a fragment with no trigger gets "E2E: manual trigger" -> "E2E: input" wired in front of it
 node test/e2e/run-workflow.mjs --workflow workflows/step2-extract-watches.json \
@@ -107,7 +108,8 @@ Built-in behaviour taken from the real services:
   credentials."); `license` values are checked against the 10 Openverse codes (a space after a comma is
   a 400); `page_size` above 20 (anonymous) or 50 (token) is a 401; `GET /v1/images` redirects 301 to
   `/v1/images/`; records with `"mature": true` are dropped unless the request asks for sensitive
-  results, and like the real API ANY non-empty `mature` value, `mature=false` included, asks for them.
+  results, and like the real API ANY non-empty `mature` value, `mature=false` included, asks for them;
+  `extension=a,b` keeps only records whose URL's last dot segment is listed (the indexer's `get_extension`).
   Options: `burstLimit` (429 after N searches), `tokenMaxUses` (tokens expire after N uses, for
   refresh tests), `clients` (default `mock-openverse-client-id` / `mock-openverse-client-secret`),
   `tokens`, `tokenTtl`.

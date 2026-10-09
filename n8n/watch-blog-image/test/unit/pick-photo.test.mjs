@@ -14,7 +14,7 @@ const CM_MAP = { 'Rolex Submariner': 'search-rolex-submariner.json' };
 const IMAGE_KEYS = [
   'provider', 'source_name', 'id', 'title', 'creator', 'creator_url', 'license', 'license_version', 'license_name',
   'license_url', 'landing_url', 'file_url', 'width', 'height', 'extension', 'mime', 'attribution_required', 'query',
-  'score', 'reasons', 'alt_text', 'credit_text', 'download_filename',
+  'score', 'reasons', 'alt_text', 'credit_text', 'download_filename', 'recent_keys',
 ];
 const OUT_KEYS = ['source', 'post_title', 'watches', 'image_queries', 'image', 'image_error', 'alternates', 'search_log'];
 const tag = name => ({ name, accuracy: null, unstable__provider: 'flickr' });
@@ -62,6 +62,7 @@ test('(a) Openverse hit at model level: best-scored copy, Commons-hosted file fe
     alt_text: 'Rolex Submariner Date watch',
     credit_text: 'Photo: "Rolex Submariner Date 126610LN" by Horologium42, CC BY-SA 4.0, via Wikimedia Commons',
     download_filename: 'rolex-submariner-date-watch-openverse-ed296e8f1cb3.jpg',
+    recent_keys: ['commons:148213907', 'file:upload.wikimedia.org/wikipedia/commons/4/4c/rolex_submariner_date_126610ln.jpg', 'openverse:ed296e8f-1cb3-5e22-825d-ddbd552c338c'],
   });
   assert.deepEqual(o.search_log[0], { rank: 0, q: 'Rolex Submariner Date', provider: 'openverse', status: 'ok', results: 4, passed: 4 });
   assert.deepEqual(o.search_log.map(e => [e.rank, e.provider, e.status, e.results, e.passed]), [
@@ -126,7 +127,7 @@ test('(d) nothing passes anywhere: image null, the reason names the rejections, 
   assert.equal(o.image, null);
   assert.deepEqual(o.alternates, []);
   assert.equal(o.image_error, 'no licence-safe relevant photo found for 4 queries; ' +
-    'openverse: 36 results in 4 searches, 0 passed (file type 12, excluded term 8, too small 8, aspect 4, mature 4); ' +
+    'openverse: 36 results in 4 searches, 0 passed (excluded term 8, too small 8, file type 8, not a photo 4, aspect 4); ' +
     'commons: 48 results in 4 searches, 0 passed (licence 20, excluded term 8, too small 4, aspect 4, file type 4)');
   assert.ok(o.search_log.every(e => e.status === 'ok' && e.passed === 0));
 });
@@ -185,7 +186,21 @@ const OV_FILTERS = [
   ['license by-sa but license_url says by', { license: 'by-sa', license_version: '2.0', license_url: 'https://creativecommons.org/licenses/by/2.0/' }, 'licence'],
   ['mature', { mature: true }, 'mature'],
   ['sensitive text', { unstable__sensitivity: ['sensitive_text'] }, 'mature'],
-  ['svg', { url: 'https://upload.wikimedia.org/wikipedia/commons/d/d8/Rolex_Submariner_dial.svg', filetype: 'svg', category: 'illustration' }, 'file type'],
+  ['svg (category illustration)', { url: 'https://upload.wikimedia.org/wikipedia/commons/d/d8/Rolex_Submariner_dial.svg', filetype: 'svg', category: 'illustration' }, 'not a photo'],
+  ['svg', { url: 'https://upload.wikimedia.org/wikipedia/commons/d/d8/Rolex_Submariner_dial.svg', filetype: 'svg' }, 'file type'],
+  // Review fixes: non-photo categories, printed matter, fakes in concatenated Flickr tags, new exclusion terms.
+  ['category illustration (a jpg)', { category: 'illustration' }, 'not a photo'],
+  ['category digitized_artwork', { category: 'digitized_artwork' }, 'not a photo'],
+  ['an advertisement', { title: 'Rolex Submariner advertisement 1965' }, 'excluded term'],
+  ['a poster', { title: 'Rolex Submariner poster' }, 'excluded term'],
+  ['tag "fakerolex"', { title: 'My Submariner', tags: flickrTags('fakerolex', 'submariner', 'watch') }, 'excluded term'],
+  ['tag "notarolex"', { title: 'Rolex Submariner on wrist', tags: flickrTags('notarolex', 'watch') }, 'excluded term'],
+  ['tag "fakewatch"', { tags: flickrTags('fakewatch') }, 'excluded term'],
+  ['tag "rolexlogo"', { tags: flickrTags('rolexlogo') }, 'excluded term'],
+  ['"superclone" in the title', { title: 'Rolex Submariner superclone' }, 'excluded term'],
+  ['"clone" in the title', { title: 'Rolex Submariner clone from Shenzhen' }, 'excluded term'],
+  ['"emblem" in the title', { title: 'Rolex Submariner crown emblem' }, 'excluded term'],
+  ['tag "smartwatch"', { tags: flickrTags('rolex', 'submariner', 'smartwatch') }, 'excluded term'],
   ['gif', { url: 'https://live.staticflickr.com/1/2_3.gif', filetype: 'gif' }, 'file type'],
   ['tiff (filetype only)', { url: 'https://upload.wikimedia.org/wikipedia/commons/3/33/Scan.tif', filetype: 'tiff' }, 'file type'],
   ['pdf', { url: 'https://example.org/rolex-submariner.pdf', filetype: null }, 'file type'],
@@ -227,6 +242,15 @@ const OV_PASSES = [
   ['a machine tag "logo" does not exclude', { tags: [...flickrTags('rolex', 'submariner'), { name: 'logo', accuracy: 0.91, unstable__provider: 'clarifai' }] }, () => {}],
   ['tag "memento" is not "meme"', { tags: flickrTags('rolex', 'submariner', 'memento') }, () => {}],
   ['"logos" only in a description Openverse does not return', { fields_matched: ['description', 'title'] }, () => {}],
+  ['tag "mementomori" (contains "meme", a watch theme)', { tags: flickrTags('rolex', 'submariner', 'mementomori') }, () => {}],
+  ['category photograph', { category: 'photograph' }, () => {}],
+  ['source code without a display name is title-cased', { source: 'smithsonian_national_museum_of_natural_history', provider: 'smithsonian' }, i => {
+    assert.equal(i.source_name, 'Smithsonian National Museum Of Natural History');
+    assert.match(i.credit_text, /, via Smithsonian National Museum Of Natural History$/);
+  }],
+  ['Smithsonian source with a display name', { source: 'smithsonian_american_history_museum', provider: 'smithsonian' }, i => {
+    assert.equal(i.source_name, 'Smithsonian Institution: National Museum of American History');
+  }],
   ['unknown dimensions: kept, -10', { width: null, height: null }, i => {
     assert.deepEqual([i.width, i.height], [null, null]);
     assert.deepEqual(i.reasons, ['+3 openverse', '-10 unknown dimensions']);
@@ -301,6 +325,8 @@ const COMMONS_REJECTS = [
   ['UsageTerms says NonCommercial', { meta: { UsageTerms: 'Creative Commons Attribution-NonCommercial-ShareAlike 4.0' } }, 'licence'],
   ['Restrictions personality', { meta: { Restrictions: 'personality' } }, 'personality'],
   ['Restrictions personality|trademarked', { meta: { Restrictions: 'personality|trademarked' } }, 'personality'],
+  ['public domain text logo (pd-textlogo)', { meta: { LicenseShortName: 'Public domain', License: 'pd-textlogo', LicenseUrl: null, UsageTerms: 'Public domain', Restrictions: 'trademarked' } }, 'licence'],
+  ['public domain, too simple for copyright (pd-ineligible)', { meta: { LicenseShortName: 'Public domain', License: 'pd-ineligible', LicenseUrl: null, UsageTerms: 'Public domain' } }, 'licence'],
   ['GIF', { page: { title: 'File:Rolex Submariner Date 126610LN.gif' }, info: { mime: 'image/gif' } }, 'file type'],
   ['PDF', { page: { title: 'File:Rolex Submariner Date 126610LN manual.pdf' }, info: { mime: 'application/pdf' } }, 'file type'],
   ['DjVu', { page: { title: 'File:Rolex Submariner Date 126610LN catalogue.djvu' }, info: { mime: 'image/vnd.djvu' } }, 'file type'],
@@ -342,6 +368,11 @@ const COMMONS_CREATORS = [
   ['red link to a user page', cmRec(1, { meta: { Artist: cmRec(6).imageinfo[0].extmetadata.Artist.value } }), ['Diver1987', 'https://commons.wikimedia.org/wiki/User:Diver1987'], false],
   ['"The original uploader was X at English Wikipedia."', cmRec(1, { meta: { Artist: cmRec(4).imageinfo[0].extmetadata.Artist.value } }), ['Tickticktock at English Wikipedia', 'https://en.wikipedia.org/wiki/User:Tickticktock'], false],
   ['Flickr profile link', cmRec(2), ['chronoshots', 'https://www.flickr.com/people/41894170373@N01'], false],
+  ['Artist "Unbekannt" (German for unknown)', cmRec(1, { meta: { Artist: '<span class="fn">Unbekannt</span>' } }), ['Unknown author', ''], true],
+  ['Artist "Auteur inconnu"', cmRec(1, { meta: { Artist: 'Auteur inconnu' } }), ['Unknown author', ''], true],
+  // CC BY 4.0 3(a)(1)(A)(i): the creator is named "in any reasonable manner requested by the Licensor".
+  ['licensor-requested Attribution, no Artist', cmRec(1, { meta: { Artist: '', Attribution: 'Photo: Jane Doe / ExampleAgency, mandatory credit' } }), ['Jane Doe / ExampleAgency, mandatory credit', ''], false],
+  ['Attribution wins over Artist; source and licence parts dropped (fixture index 3)', cmRec(3, { meta: { Artist: '<a href="//commons.wikimedia.org/wiki/User:Kronograph">K. Graph</a>' } }), ['Kronograph', 'https://commons.wikimedia.org/wiki/User:Kronograph'], false],
   ['entities and nested markup', cmRec(1, { meta: { Artist: '<span class="fn"><a href="//commons.wikimedia.org/wiki/User:M%C3%BCller" title="User:Müller">J&#252;rgen M&uuml;ller &amp; Co</a></span>' } }), ['Jürgen M&uuml;ller & Co', 'https://commons.wikimedia.org/wiki/User:M%C3%BCller'], false],
 ];
 for (const [name, page, [creator, url], penalised] of COMMONS_CREATORS) {
@@ -427,10 +458,150 @@ for (const [name, q, title, tags, passes] of RELEVANCE) {
   });
 }
 
-test('brand level without a watch word passes with -10 (Commons pages often say only "Rolex Datejust")', async () => {
+test('brand level needs a watch word for every brand (review fix: "Rolex Learning Center" was picked with -10)', async () => {
   const o = await one(Q_BRAND, ovPage(ovRec(OV_BASE, { title: 'Rolex Datejust', tags: flickrTags('rolex') })));
-  assert.ok(o.image.reasons.includes('-10 no watch word'));
-  assert.equal(o.image.alt_text, 'Rolex watch');
+  assert.match(o.image_error, /0 passed \(not relevant 1\)/);
+  const ok = await one(Q_BRAND, ovPage(ovRec(OV_BASE, { title: 'Rolex Datejust', tags: flickrTags('rolex', 'wristwatch') })));
+  assert.equal(ok.image.alt_text, 'Rolex watch');
+  assert.ok(!ok.image.reasons.some(r => /watch word/.test(r)));
+});
+
+// --- Review fixes: wrong brand, non-watch subjects, weak watch evidence ----------------------------------------
+const mtag = name => ({ name, accuracy: 0.95, unstable__provider: 'clarifai' });
+const big = patch => ovRec(OV_BASE, { width: 2000, height: 1500, ...patch });
+const cmMeta = (title, desc, cats, extra = {}) => ({ page: { title: `File:${title}.jpg` }, meta: { ObjectName: title, ImageDescription: desc, Categories: cats, ...extra } });
+const AP_FAM = fam('Audemars Piguet', 'Royal Oak');
+const REVIEW_OV = [
+  // [name, query, Openverse record, reject category or null (passes)]
+  ['family: an Omega photo tagged rolex/submariner', Q_FAMILY, big({ title: 'Omega Seamaster Diver 300M', tags: flickrTags('omega', 'seamaster', 'rolex', 'submariner', 'watch') }), 'other brand'],
+  ['model: both brands in the title (comparison) is fine', query('Omega Speedmaster Professional', 'model', { brand: 'Omega', model_family: 'Speedmaster', model: 'Speedmaster Professional', reference: '' }), big({ title: 'Rolex Daytona vs Omega Speedmaster Professional', tags: flickrTags('watch') }), null],
+  ['family: two-letter AP alone is not the brand ("The Royal Oak pub")', AP_FAM, big({ title: 'The Royal Oak pub, Bath', tags: flickrTags('ap', 'pub', 'watch') }), 'not relevant'],
+  ['family: "VC soldiers overseas"', fam('Vacheron Constantin', 'Overseas'), big({ title: 'VC soldiers overseas', tags: flickrTags('vietnam') }), 'not relevant'],
+  ['family: "AP Royal Oak" still names the brand', AP_FAM, big({ title: 'AP Royal Oak 15202 on the wrist', tags: [] }), null],
+  ['brand: Rolex Learning Center (no watch word)', Q_BRAND, big({ title: 'Rolex Learning Center, EPFL Lausanne', tags: flickrTags('rolex', 'architecture', 'sanaa') }), 'not relevant'],
+  ['brand: Rolex sign', Q_BRAND, big({ title: 'Rolex sign', tags: flickrTags('rolex', 'street', 'night') }), 'not relevant'],
+  ['brand: Rolex pocket watch', Q_BRAND, big({ title: 'Rolex pocket watch 1925', tags: flickrTags('rolex', 'pocketwatch') }), 'not a wristwatch'],
+  ['brand: Rolex wall clock with a watch tag', Q_BRAND, big({ title: 'Rolex clock at Wimbledon', tags: flickrTags('rolex', 'watch') }), 'not a wristwatch'],
+  ['brand: a watchmaker is not a watch', Q_BRAND, big({ title: 'Rolex watchmaker at work', tags: flickrTags('rolex') }), 'not relevant'],
+  ['generic: Apple Watch', Q_GENERIC, big({ title: 'Apple Watch Series 9', tags: flickrTags('applewatch', 'smartwatch') }), 'excluded term'],
+  ['generic: telephone dial', Q_GENERIC, big({ title: 'Old telephone dial', tags: flickrTags('dial', 'telephone') }), 'not relevant'],
+  ['generic: only a machine tag says watch', Q_GENERIC, big({ title: 'IMG_0001', tags: [mtag('watch')] }), 'not relevant'],
+  ['generic: portrait with a machine tag wristwatch', Q_GENERIC, big({ title: 'Portrait of Anna', tags: [...flickrTags('portrait', 'woman'), mtag('wristwatch')] }), 'not relevant'],
+  ['generic: antique pocket watch', Q_GENERIC, big({ title: 'Antique pocket watch', tags: flickrTags('pocketwatch') }), 'not a wristwatch'],
+  ['generic: fabric swatch', Q_GENERIC, big({ title: 'Fabric swatch', tags: flickrTags('swatch') }), 'not relevant'],
+  ['generic: a wristwatch with a dial close-up still passes', Q_GENERIC, big({ title: 'Wristwatch dial close-up', tags: [] }), null],
+];
+for (const [name, q, rec, category] of REVIEW_OV) {
+  test(`relevance review fix (Openverse): ${name}`, async () => {
+    const o = await one(q, ovPage(rec));
+    if (!category) assert.ok(o.image, o.image_error);
+    else assert.match(o.image_error, new RegExp(`openverse: 1 result in 1 search, 0 passed \\(${category} 1\\)`));
+  });
+}
+const SEIKO = lvl('Seiko', 'brand');
+const REVIEW_CM = [
+  ['family: Tudor Submariner whose description names the Rolex', Q_FAMILY, cmMeta('Tudor Submariner 7928', 'Tudor Oyster Prince Submariner ref. 7928, the Tudor sister of the Rolex Submariner', 'Tudor Submariner|Wristwatches'), 'not relevant'],
+  ['family: Tudor in the title, Rolex in a category', Q_FAMILY, cmMeta('Tudor Submariner 7928', 'Tudor Oyster Prince Submariner', 'Tudor Submariner|Rolex Submariner|Wristwatches'), 'other brand'],
+  ['family: Seiko "poor man\'s Rolex Submariner"', Q_FAMILY, cmMeta('Seiko SKX007 diver', "Seiko SKX007, often called the poor man's Rolex Submariner", 'Seiko diving watches'), 'not relevant'],
+  ['family: brand only in a category is enough', Q_FAMILY, cmMeta('Submariner 5513 on a NATO strap', 'A 1970s Submariner', 'Rolex Submariner|Wristwatches'), null],
+  ['brand: statue of Jacques Cartier', lvl('Cartier', 'brand'), cmMeta('Statue of Jacques Cartier, Saint-Malo', 'Statue of the explorer Jacques Cartier', 'Jacques Cartier statues'), 'not relevant'],
+  ['brand: Cartier tiara', lvl('Cartier', 'brand'), cmMeta('Cartier halo tiara', 'Cartier tiara, 1936', 'Cartier jewellery'), 'not relevant'],
+  ['brand: Breguet 14 aircraft', lvl('Breguet', 'brand'), cmMeta('Breguet 14 at Musee de l Air', 'Breguet 14 bomber biplane', 'Breguet 14'), 'not relevant'],
+  ['brand: Seiko Matsuda (a singer)', SEIKO, cmMeta('Seiko Matsuda 2011', 'Seiko Matsuda in concert', 'Seiko Matsuda'), 'not relevant'],
+  ['brand: Seiko station clock', SEIKO, cmMeta('Seiko clock at Shinjuku Station', 'Station clock made by Seiko', 'Seiko clocks|Shinjuku Station'), 'not relevant'],
+  ['brand: "Jager" tank destroyer for Jaeger-LeCoultre', lvl('Jaeger-LeCoultre', 'brand'), cmMeta('Jäger tank destroyer', 'Panzerjäger in museum', 'Tank destroyers'), 'not relevant'],
+  ['brand: Dorothea Lange photo for A. Lange & Söhne', lvl('A. Lange & Söhne', 'brand'), cmMeta('Migrant Mother by Dorothea Lange', 'Photograph by Dorothea Lange, 1936', 'Dorothea Lange photographs', { LicenseShortName: 'Public domain', License: 'pd-usgov', LicenseUrl: null }), 'not relevant'],
+  ['brand: Zenith building with a clock dial', lvl('Zenith', 'brand'), cmMeta('Zenith building clock dial', 'Zenith building facade with a large clock dial', 'Zenith buildings'), 'not relevant'],
+  ['brand: Patek Philippe pocket watch', lvl('Patek Philippe', 'brand'), cmMeta('Patek Philippe pocket watch, 1890, Walters Art Museum', 'Pocket watch by Patek Philippe', 'Patek Philippe pocket watches|Walters Art Museum'), 'not a wristwatch'],
+  ['brand: a Seiko wristwatch passes', SEIKO, cmMeta('Seiko Presage SRPB41', 'Seiko Presage wristwatch', 'Seiko watches'), null],
+];
+for (const [name, q, patch, category] of REVIEW_CM) {
+  test(`relevance review fix (Commons): ${name}`, async () => {
+    const o = await one(q, N8N.default_429, cmPages(cmRec(1, patch)));
+    if (!category) assert.ok(o.image, o.image_error);
+    else assert.match(o.image_error, new RegExp(`commons: 1 result in 1 search, 0 passed \\(${category} 1\\)$`));
+  });
+}
+test('a big Tudor Submariner no longer beats a smaller real Rolex Submariner', async () => {
+  const tudor = cmRec(1, {
+    page: { title: 'File:Tudor Submariner 7928.jpg', pageid: 5001, index: 1 },
+    info: { width: 4000, height: 3000, url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Tudor_Submariner_7928.jpg', descriptionurl: 'https://commons.wikimedia.org/wiki/File:Tudor_Submariner_7928.jpg', descriptionshorturl: 'https://commons.wikimedia.org/w/index.php?curid=5001', thumburl: '' },
+    meta: { ObjectName: 'Tudor Submariner 7928', ImageDescription: 'Tudor Oyster Prince Submariner ref. 7928, the Tudor sister of the Rolex Submariner', Categories: 'Tudor Submariner' },
+  });
+  const rolex = cmRec(1, {
+    page: { title: 'File:Rolex Submariner 5513.jpg', pageid: 5002, index: 2 },
+    info: { width: 1200, height: 900, url: 'https://upload.wikimedia.org/wikipedia/commons/c/cd/Rolex_Submariner_5513.jpg', descriptionurl: 'https://commons.wikimedia.org/wiki/File:Rolex_Submariner_5513.jpg', descriptionshorturl: 'https://commons.wikimedia.org/w/index.php?curid=5002', thumburl: '' },
+    meta: { ObjectName: 'Rolex Submariner 5513', ImageDescription: 'Rolex Submariner 5513', Categories: 'Rolex Submariner' },
+  });
+  const o = await one(Q_FAMILY, N8N.default_429, cmPages(tudor, rolex));
+  assert.deepEqual([o.image.id, o.image.alt_text, o.alternates.length], ['5002', 'Rolex Submariner watch', 0]);
+});
+test('a brand-level building no longer beats a generic wristwatch', async () => {
+  const { json: [o] } = await run({
+    posts: [post([Q_BRAND, Q_GENERIC])],
+    openverse: {
+      'Rolex watch': ovPage(big({ title: 'Rolex Learning Center, EPFL Lausanne', tags: flickrTags('rolex', 'architecture') })),
+      'luxury wristwatch': ovPage(ovRec(3, { width: 2000, height: 1500, title: 'Luxury wristwatch on wrist', tags: flickrTags('wristwatch', 'watch') })),
+    },
+  });
+  assert.deepEqual([o.image.title, o.image.query.level, o.alternates.length], ['Luxury wristwatch on wrist', 'generic', 0]);
+});
+test('rival brands also come from the post\'s own watches', async () => {
+  const q = fam('Rolex', 'Submariner');
+  const rec = big({ title: 'Acme Submariner diver', tags: flickrTags('rolex', 'submariner', 'watch') });
+  const plainPost = await run({ posts: [post([q])], openverse: () => ovPage(rec) });
+  assert.ok(plainPost.json[0].image, 'Acme is not a known brand');
+  const withAcme = await run({ posts: [post([q], { watches: [W_SUB, { ...W_SUB, brand: 'Acme', model_family: 'Diver' }] })], openverse: () => ovPage(rec) });
+  assert.match(withAcme.json[0].image_error, /0 passed \(other brand 1\)/);
+});
+
+// --- Review fix: a photo one provider rejects is not taken from the other one -------------------------------------
+const OV_COMMONS_COPY = ovRec(1); // Openverse row of Commons page 148213907 (curid in its landing URL)
+const VETOES = [
+  ['Commons copy is CC BY-NC-SA', { LicenseShortName: 'CC BY-NC-SA 4.0', License: 'cc-by-nc-sa-4.0', LicenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0', UsageTerms: 'Creative Commons Attribution-NonCommercial-ShareAlike 4.0' }, 'licence'],
+  ['Commons copy has a personality restriction', { Restrictions: 'personality' }, 'personality'],
+  ['Commons copy is NonFree', { NonFree: 'true' }, 'licence'],
+  ['Commons copy is GFDL only', { LicenseShortName: 'GFDL', License: 'gfdl', LicenseUrl: 'https://www.gnu.org/copyleft/fdl.html', UsageTerms: 'GNU Free Documentation License' }, 'licence'],
+  ['Commons copy is in a replica category', { Categories: 'Replica watches|Rolex Submariner' }, 'excluded term'],
+];
+for (const [name, meta, category] of VETOES) {
+  test(`veto: ${name} -> the Openverse copy is dropped too`, async () => {
+    const o = await one(Q_FAMILY, ovPage(OV_COMMONS_COPY), cmPages(cmRec(1, { meta })));
+    assert.equal(o.image, null);
+    assert.match(o.image_error, /openverse: 1 result in 1 search, 0 passed \(copy rejected elsewhere 1\)/);
+    assert.match(o.image_error, new RegExp(`commons: 1 result in 1 search, 0 passed \\(${category} 1\\)$`));
+    assert.deepEqual(o.search_log.map(e => [e.provider, e.results, e.passed]), [['openverse', 1, 0], ['commons', 1, 0]]);
+  });
+}
+test('veto control: an acceptable Commons copy keeps the Openverse copy (deduped to one)', async () => {
+  const o = await one(Q_FAMILY, ovPage(OV_COMMONS_COPY), cmPages(cmRec(1)));
+  assert.deepEqual([o.image.provider, o.image.id.slice(0, 8), o.alternates.length], ['openverse', 'ed296e8f', 0]);
+});
+test('veto across queries and by Flickr id: an NC Flickr2Commons copy drops the Flickr original', async () => {
+  const f2c = cmRec(1, { page: { title: 'File:Rolex Submariner Date 126610LN (53218846721).jpg', pageid: 999 }, meta: { LicenseShortName: 'CC BY-NC 2.0', License: null, LicenseUrl: 'https://creativecommons.org/licenses/by-nc/2.0' } });
+  const { json: [o] } = await run({
+    posts: [post([Q_MODEL, Q_FAMILY])],
+    openverse: { 'Rolex Submariner Date': ovPage(ovRec(0, { width: 2048, height: 1365 })) },
+    commons: { 'Rolex Submariner': cmPages(f2c) },
+  });
+  assert.equal(o.image, null);
+  assert.match(o.image_error, /copy rejected elsewhere 1/);
+});
+test('veto the other way: Openverse tags say replica, so the Commons copy is dropped', async () => {
+  const o = await one(Q_FAMILY, ovPage(ovRec(1, { tags: flickrTags('rolex', 'replica') })), cmPages(cmRec(1)));
+  assert.equal(o.image, null);
+  assert.match(o.image_error, /commons: 1 result in 1 search, 0 passed \(copy rejected elsewhere 1\)$/);
+});
+
+// --- Review fix: Wikimedia URLs carry a utm query string (MediaWiki request provenance) ---------------------------
+test('an Openverse Wikimedia row whose url ends in ?utm_...: jpg, 1920 px thumbnail, deduped against the Commons page', async () => {
+  const utm = '?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original';
+  const rec = ovRec(1, { url: OV_COMMONS_COPY.url + utm, filetype: null });
+  const alone = await one(Q_FAMILY, ovPage(rec));
+  assert.deepEqual([alone.image.extension, alone.image.mime, alone.image.width], ['jpg', 'image/jpeg', 1920]);
+  assert.equal(alone.image.file_url, 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rolex_Submariner_Date_126610LN.jpg/1920px-Rolex_Submariner_Date_126610LN.jpg');
+  const both = await one(Q_FAMILY, ovPage(rec), cmPages(cmRec(1)));
+  assert.deepEqual([both.image.provider, both.alternates.length], ['openverse', 0]);
 });
 
 // --- Scoring and choice ----------------------------------------------------------------------------------------
@@ -497,10 +668,12 @@ test('dedupe: different URLs, same title and size', async () => {
 
 // --- Recently used photos (workflow static data) -------------------------------------------------------------
 const seeded = recent => ({ liveRunIds: { 'run-1': '2026-10-01T00:00:00.000Z' }, imageFinder: { recent } });
+// The pick only reads the list by default (review fix); REMEMBER_CHOSEN = true restores the in-pick write.
+const WRITE = setConst(PICK_CODE, 'REMEMBER_CHOSEN', 'true');
 
 test('recently used photo gets -40 and loses its rank to the next best; static data records the new choice', async () => {
   const staticData = seeded([{ key: 'commons:148213907', at: '2026-10-01T00:00:00.000Z' }]);
-  const { json: [o] } = await run({ posts: [post(ALL4)], openverse: OV_MAP, commons: CM_MAP, staticData });
+  const { json: [o] } = await run({ posts: [post(ALL4)], openverse: OV_MAP, commons: CM_MAP, staticData, code: WRITE });
   assert.equal(o.image.id, 'd3e4d1e1-c069-5080-b265-b206da47bdea');
   assert.deepEqual(o.alternates.map(a => [a.id.slice(0, 8), a.score]), [['149d8686', 28], ['ed296e8f', 13], ['34418877', 35]]);
   assert.equal(o.alternates[1].reasons.at(-1), '-40 recently used');
@@ -522,7 +695,7 @@ test('recently used: matched through any key (a bare Flickr id string entry)', a
 test('recently used never beats rank: the only photo of query 0 is still chosen', async () => {
   const staticData = seeded([{ key: 'commons:148213907', at: 'x' }, { key: 'x:1', at: 'x' }]);
   const { json: [o] } = await run({
-    posts: [post([Q_MODEL, Q_FAMILY])], openverse: { 'Rolex Submariner Date': ovPage(ovRec(1)), 'Rolex Submariner': ovPage(ovRec(2)) }, staticData,
+    posts: [post([Q_MODEL, Q_FAMILY])], openverse: { 'Rolex Submariner Date': ovPage(ovRec(1)), 'Rolex Submariner': ovPage(ovRec(2)) }, staticData, code: WRITE,
   });
   assert.deepEqual([o.image.id.slice(0, 8), o.image.score], ['ed296e8f', 13]);
   assert.deepEqual(staticData.imageFinder.recent.map(r => r.key), ['x:1', 'commons:148213907'], 'moved to the end, not duplicated');
@@ -530,7 +703,7 @@ test('recently used never beats rank: the only photo of query 0 is still chosen'
 
 test(`recent list is trimmed to RECENT_LIMIT (30), oldest first out`, async () => {
   const staticData = seeded(Array.from({ length: 30 }, (_, i) => ({ key: 'old:' + i, at: 'x' })));
-  await one(Q_FAMILY, ovPage(ovRec(2)), undefined, { staticData });
+  await one(Q_FAMILY, ovPage(ovRec(2)), undefined, { staticData, code: WRITE });
   const keys = staticData.imageFinder.recent.map(r => r.key);
   assert.equal(keys.length, 30);
   assert.deepEqual([keys[0], keys.at(-1)], ['old:1', 'flickr:52790466118']);
@@ -538,7 +711,7 @@ test(`recent list is trimmed to RECENT_LIMIT (30), oldest first out`, async () =
 
 test('RECENT_LIMIT is a config constant', async () => {
   const staticData = seeded([{ key: 'a', at: 'x' }, { key: 'b', at: 'x' }]);
-  await pipeline({ posts: [post([Q_FAMILY])], openverse: () => ovPage(ovRec(2)), staticData, code: setConst(PICK_CODE, 'RECENT_LIMIT', '2') });
+  await pipeline({ posts: [post([Q_FAMILY])], openverse: () => ovPage(ovRec(2)), staticData, code: setConst(WRITE, 'RECENT_LIMIT', '2') });
   assert.deepEqual(staticData.imageFinder.recent.map(r => r.key), ['b', 'flickr:52790466118']);
 });
 
@@ -549,7 +722,7 @@ const BAD_STATIC = [
 ];
 for (const [name, staticData] of BAD_STATIC) {
   test(`static data repaired, never fatal: ${name}`, async () => {
-    const o = await one(Q_FAMILY, ovPage(ovRec(2)), undefined, { staticData });
+    const o = await one(Q_FAMILY, ovPage(ovRec(2)), undefined, { staticData, code: WRITE });
     assert.ok(o.image);
     assert.ok(Array.isArray(staticData.imageFinder.recent));
     assert.equal(staticData.imageFinder.recent.at(-1).key, 'flickr:52790466118');
@@ -561,9 +734,61 @@ test('without $getWorkflowStaticData the pick still works (nothing is remembered
   assert.ok(o.image);
 });
 
-test('two posts in one run do not get the same photo', async () => {
-  const { json } = await run({ posts: [post([Q_MODEL]), post([Q_MODEL])], openverse: OV_MAP });
-  assert.deepEqual(json.map(o => o.image.id.slice(0, 8)), ['ed296e8f', 'd3e4d1e1']);
+test('two posts in one run do not get the same photo (also without writing static data)', async () => {
+  for (const code of [PICK_CODE, WRITE]) {
+    const { json } = await run({ posts: [post([Q_MODEL]), post([Q_MODEL])], openverse: OV_MAP, staticData: {}, code });
+    assert.deepEqual(json.map(o => o.image.id.slice(0, 8)), ['ed296e8f', 'd3e4d1e1']);
+  }
+});
+
+// Review fix: n8n saves the WHOLE static data object at the end of every non-editor execution when anything in it
+// changed, so a pick that writes (a Watch Centro test run included) can overwrite the liveRunIds of an overlapping
+// live run. By default the pick must not change static data at all, not even by repairing a missing list.
+function recordingStaticData(initial) {
+  const writes = [];
+  const wrap = (obj, path) => new Proxy(obj, {
+    get(t, k) { const v = t[k]; return v && typeof v === 'object' ? wrap(v, path + '.' + String(k)) : v; },
+    set(t, k, v) { writes.push(path + '.' + String(k)); t[k] = v; return true; },
+    deleteProperty(t, k) { writes.push('delete ' + path + '.' + String(k)); delete t[k]; return true; },
+    defineProperty(t, k, d) { writes.push('define ' + path + '.' + String(k)); return Reflect.defineProperty(t, k, d); },
+  });
+  return { data: wrap(initial, 'global'), writes, raw: initial };
+}
+const STATIC_CASES = [
+  ['empty static data', {}],
+  ['Watch Centro liveRunIds only', { liveRunIds: { 'run-1': 'x' } }],
+  ['a seeded recent list', seeded([{ key: 'commons:148213907', keys: ['commons:148213907'], at: 'x' }])],
+  ['a broken imageFinder', { imageFinder: 'oops' }],
+];
+for (const [name, initial] of STATIC_CASES) {
+  test(`by default the pick never writes static data: ${name}`, async () => {
+    const before = clone(initial);
+    const sd = recordingStaticData(initial);
+    const { json } = await run({ posts: [post(ALL4), post([Q_MODEL])], openverse: OV_MAP, commons: CM_MAP, staticData: sd.data });
+    assert.ok(json[0].image && json[1].image);
+    assert.deepEqual(sd.writes, []);
+    assert.deepEqual(sd.raw, before);
+  });
+}
+test('by default the recent list is still read: a seeded photo gets -40', async () => {
+  const staticData = seeded([{ key: 'commons:148213907', at: '2026-10-01T00:00:00.000Z' }]);
+  const { json: [o] } = await run({ posts: [post(ALL4)], openverse: OV_MAP, commons: CM_MAP, staticData });
+  assert.equal(o.image.id, 'd3e4d1e1-c069-5080-b265-b206da47bdea');
+  assert.equal(o.alternates.find(a => a.id.startsWith('ed296e8f')).reasons.at(-1), '-40 recently used');
+  assert.equal(staticData.imageFinder.recent.length, 1, 'nothing added');
+});
+test('recent_keys: what step 5 records, primary key first, on the image and every alternate', async () => {
+  const { json: [o] } = await run({ posts: [post(ALL4)], openverse: OV_MAP, commons: CM_MAP });
+  assert.deepEqual(o.image.recent_keys.slice(0, 1), ['commons:148213907']);
+  for (const a of [o.image, ...o.alternates]) {
+    assert.ok(a.recent_keys.length >= 2);
+    assert.ok(a.recent_keys.every(k => typeof k === 'string' && !k.startsWith('td:') && !k.startsWith('page:')));
+    assert.ok(a.recent_keys.includes(`${a.provider}:${a.id}`));
+  }
+  // A list seeded with any of these keys penalises the photo next time.
+  const staticData = seeded([{ key: o.image.recent_keys[0], keys: o.image.recent_keys, at: 'x' }]);
+  const { json: [again] } = await run({ posts: [post(ALL4)], openverse: OV_MAP, commons: CM_MAP, staticData });
+  assert.notEqual(again.image.id, o.image.id);
 });
 
 // --- Provider errors and odd responses ------------------------------------------------------------------------
@@ -668,6 +893,14 @@ test('several posts: one output item per post, in order, each paired with its ow
   assert.equal(out[0].json.image.id.slice(0, 8), 'ed296e8f');
   assert.equal(out[1].json.image.id.slice(0, 8), '257ee03a');
   assert.deepEqual([out[2].json.image, out[2].json.image_error, out[2].json.search_log], [null, 'no image queries for this post', []]);
+});
+
+test('review fix: when the pick fails as a whole, each fallback item is still paired with its own post', async () => {
+  const code = PICK_CODE.replace('const nPosts = Math.max(', "throw new Error('injected'); const nPosts = Math.max(");
+  assert.notEqual(code, PICK_CODE);
+  const { out } = await pipeline({ posts: [post(ALL4), post([Q_GENERIC], { post_title: 'Second' })], openverse: OV_MAP, commons: CM_MAP, code });
+  assert.deepEqual(out.map(o => [o.json.image, o.json.image_error]), [[null, 'pick photo failed: injected'], [null, 'pick photo failed: injected']]);
+  assert.deepEqual(out.map(o => o.pairedItem), [[{ item: 0 }, { item: 1 }, { item: 2 }, { item: 3 }], [{ item: 4 }]]);
 });
 
 test('alignment survives shuffled search items (pairedItem is used, not the position)', async () => {

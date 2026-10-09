@@ -182,13 +182,13 @@ const kv = (name, value) => ({ name, value });
 
 const STICKY3 = `## Image finder (step 3): search and pick a photo
 
-**Flow:** *split queries* makes one item per image query -> *search Openverse* (licences CC BY, BY-SA, CC0, PDM only; jpg/png/webp; 20 results; one request every 3.5 s) -> *search Commons* (same query, bitmap files only; one request per second) -> *pick photo* drops anything that is not CC0, public domain, CC BY or CC BY-SA, smaller than 1000 px, the wrong shape or file type, a replica, a logo or off topic, then takes the best photo of the most specific query that has one.
+**Flow:** *split queries* makes one item per image query -> *search Openverse* (licences CC BY, BY-SA, CC0, PDM only; 20 results; one request every 3.5 s) -> *search Commons* (same query, bitmap files only; one request per second) -> *pick photo* drops anything that is not CC0, public domain, CC BY or CC BY-SA, smaller than 1000 px, the wrong shape or file type, a replica, a logo, another brand's watch, a non-watch subject, or a copy of a photo the other source rejected, then takes the best photo of the most specific query that has one.
 
 **Output (one item per post):** \`{source, post_title, watches, image_queries, image, image_error, alternates, search_log}\`. \`image\` has file_url, landing_url, licence, creator, alt_text, credit_text, download_filename. When nothing passes, \`image\` is null and \`image_error\` says why. A 429, a timeout or an API error never stops the run; it shows in \`search_log\`.
 
 **Optional, higher Openverse limits:** register a free app (README, "Openverse registration"), click the e-mailed link, then Credentials > Create > **OAuth2 API**: Grant Type *Client Credentials*, Access Token URL \`https://api.openverse.org/v1/auth_tokens/token/\`, Client ID and Secret from the registration, Scope empty, Authentication *Body*. In *search Openverse* set Authentication *Generic Credential Type* > *OAuth2 API* > that credential; the batch interval can then go down to 700 ms.
 
-**Placement:** same as step 2 (not inline yet). Recently chosen photos are remembered in the workflow static data, which n8n does not save for editor test runs.`;
+**Placement:** same as step 2 (not inline yet). Recently used photos (static data \`imageFinder.recent\`) score -40, but this node only READS that list: step 5 adds a photo on the live branch once it is really used (\`image.recent_keys\`).`;
 
 export function buildStep3Fragment() {
   const splitCode = checkCode(NAMES.split, read('src/split-queries.js').trimEnd());
@@ -218,7 +218,8 @@ export function buildStep3Fragment() {
             kv('license', 'by,by-sa,cc0,pdm'),
             kv('page_size', '20'),
             // Not "mature": the API reads ANY mature value, "false" included, as "include sensitive results".
-            kv('extension', 'jpg,jpeg,png,webp'),
+            // Not "extension": Openverse derives it from the URL's last dot segment, and Wikimedia URLs now end in
+            // "?utm_source=commons.wikimedia.org&...", so the filter would drop every recently indexed Commons photo.
           ],
         },
         sendHeaders: true,
@@ -253,7 +254,7 @@ export function buildStep3Fragment() {
             kv('iiurlwidth', '1920'),
             kv('iiextmetadatafilter', COMMONS_EXTMETADATA.join('|')),
             kv('iiextmetadatalanguage', 'en'),
-            kv('maxlag', '5'),
+            // No maxlag: for a few reads a minute it only adds a failure mode (HTTP 200 + error, nothing retries it).
           ],
         },
         sendHeaders: true,

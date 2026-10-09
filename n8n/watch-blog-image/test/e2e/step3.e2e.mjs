@@ -45,7 +45,7 @@ const OUT_KEYS = ['source', 'post_title', 'watches', 'image_queries', 'image', '
 const IMAGE_KEYS = [
   'provider', 'source_name', 'id', 'title', 'creator', 'creator_url', 'license', 'license_version', 'license_name',
   'license_url', 'landing_url', 'file_url', 'width', 'height', 'extension', 'mime', 'attribution_required', 'query',
-  'score', 'reasons', 'alt_text', 'credit_text', 'download_filename',
+  'score', 'reasons', 'alt_text', 'credit_text', 'download_filename', 'recent_keys',
 ];
 const skip = !process.env.N8N_BIN && 'N8N_BIN not set (see README, "End-to-end tests")';
 
@@ -170,7 +170,7 @@ function assertOpenverseRequests(ov, queries) {
   assert.deepEqual(ov.map(q => q.query.q), queries);
   for (const q of ov) {
     assert.equal(q.method, 'GET');
-    assert.deepEqual(q.query, { q: q.query.q, license: 'by,by-sa,cc0,pdm', page_size: '20', extension: 'jpg,jpeg,png,webp' });
+    assert.deepEqual(q.query, { q: q.query.q, license: 'by,by-sa,cc0,pdm', page_size: '20' }, 'no "mature", no "extension"');
     assert.equal(q.headers['user-agent'], UA);
     assert.equal(q.headers.accept, 'application/json');
     assert.equal(q.headers.authorization, undefined);
@@ -184,8 +184,8 @@ function assertCommonsRequests(cm, queries) {
     assert.deepEqual(q.query, {
       action: 'query', format: 'json', formatversion: '2', generator: 'search', gsrsearch: q.query.gsrsearch,
       gsrnamespace: '6', gsrlimit: '20', prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', iiurlwidth: '1920',
-      iiextmetadatafilter: EXTMETA, iiextmetadatalanguage: 'en', maxlag: '5',
-    });
+      iiextmetadatafilter: EXTMETA, iiextmetadatalanguage: 'en',
+    }, 'no maxlag');
     assert.equal(q.headers['user-agent'], UA, 'Wikimedia UA policy: app name/version + contact');
   }
 }
@@ -193,7 +193,7 @@ const logOf = o => o.search_log.map(e => [e.rank, e.provider, e.status, e.http_e
 const ids = o => [o.image, ...o.alternates].filter(Boolean).map(a => `${a.provider}:${a.id}`);
 const startGaps = reqs => reqs.slice(1).map((q, i) => q.t_ms - reqs[i].t_ms);
 
-test('(a) Openverse hit at model level; real batching intervals; static data remembers the photo', { skip, timeout: 300000 }, async () => {
+test('(a) Openverse hit at model level; real batching intervals; static data is left untouched', { skip, timeout: 300000 }, async () => {
   const { r, out, pickOut, ov, cm, posts } = await runCase('a-openverse-model', {
     openverse: OV_OK, commons: { 'Rolex Submariner': 'search-rolex-submariner.json' },
     staticData: { global: { liveRunIds: { 'run-e2e-1': '2026-10-01T00:00:00.000Z' } } },
@@ -220,18 +220,20 @@ test('(a) Openverse hit at model level; real batching intervals; static data rem
     alt_text: 'Rolex Submariner Date watch',
     credit_text: 'Photo: "Rolex Submariner Date 126610LN" by Horologium42, CC BY-SA 4.0, via Wikimedia Commons',
     download_filename: 'rolex-submariner-date-watch-openverse-ed296e8f1cb3.jpg',
+    recent_keys: ['commons:148213907', 'file:upload.wikimedia.org/wikipedia/commons/4/4c/rolex_submariner_date_126610ln.jpg', 'openverse:ed296e8f-1cb3-5e22-825d-ddbd552c338c'],
   });
   assert.deepEqual(ids(o).slice(1), [
     'openverse:d3e4d1e1-c069-5080-b265-b206da47bdea', 'openverse:149d8686-eb6f-51c9-a31f-86efb87a8d42', 'commons:34418877',
   ]);
-  // The mock applied the real API's filters: no svg row (extension) and no mature row in "Rolex Submariner".
+  // The mock applied the real API's sensitive filter (no "mature" param): the mature row of "Rolex Submariner" is gone.
+  // No "extension" filter: the svg row arrives and the pick rejects it.
   const sub = ov.find(q => q.query.q === 'Rolex Submariner');
-  assert.equal(sub.extension_removed, 1);
+  assert.equal(sub.extension_removed, undefined);
   assert.equal(sub.sensitive_removed, 1);
   assert.deepEqual(logOf(o), [
     [0, 'openverse', 'ok', '', 4, 4], [0, 'commons', 'ok', '', 0, 0],
-    [1, 'openverse', 'ok', '', 12, 8], [1, 'commons', 'ok', '', 11, 6],
-    [2, 'openverse', 'ok', '', 5, 0], [2, 'commons', 'ok', '', 0, 0],
+    [1, 'openverse', 'ok', '', 13, 8], [1, 'commons', 'ok', '', 11, 6],
+    [2, 'openverse', 'ok', '', 8, 0], [2, 'commons', 'ok', '', 0, 0],
     [3, 'openverse', 'ok', '', 5, 3], [3, 'commons', 'ok', '', 0, 0],
   ]);
   // The post is passed through untouched.
@@ -241,13 +243,9 @@ test('(a) Openverse hit at model level; real batching intervals; static data rem
   assert.deepEqual(o.image_queries, posts[0].image_queries);
   // pairedItem: every Commons item of the post (n8n resolves them all to the same post upstream).
   assert.deepEqual(pickOut[0].pairedItem, [{ item: 0 }, { item: 1 }, { item: 2 }, { item: 3 }]);
-  // Static data: the chosen photo is remembered, Watch Centro's liveRunIds is untouched.
-  assert.deepEqual(r.staticData.global.liveRunIds, { 'run-e2e-1': '2026-10-01T00:00:00.000Z' });
-  const recent = r.staticData.global.imageFinder.recent;
-  assert.equal(recent.length, 1);
-  assert.equal(recent[0].key, 'commons:148213907');
-  assert.ok(recent[0].keys.includes('openverse:ed296e8f-1cb3-5e22-825d-ddbd552c338c'));
-  assert.match(recent[0].at, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/);
+  // Static data: the pick only reads it (review fix). n8n saves the whole object at the end of a non-editor run when
+  // anything changed, which could overwrite an overlapping live run's liveRunIds; step 5 records used photos instead.
+  assert.deepEqual(r.staticData.global, { liveRunIds: { 'run-e2e-1': '2026-10-01T00:00:00.000Z' } });
 });
 
 test('(b) Openverse answers 429 to every request: Commons wins, search_log shows the 429s', { skip, timeout: 300000 }, async () => {
@@ -297,12 +295,12 @@ test('(d) nothing passes anywhere (NC/ND, too small, svg/tif, logo, replica): im
   assert.equal(o.image, null);
   assert.deepEqual(o.alternates, []);
   assert.equal(o.image_error, 'no licence-safe relevant photo found for 4 queries; ' +
-    'openverse: 20 results in 4 searches, 0 passed (excluded term 8, too small 8, aspect 4); ' +
+    'openverse: 32 results in 4 searches, 0 passed (excluded term 8, too small 8, file type 8, not a photo 4, aspect 4); ' +
     'commons: 48 results in 4 searches, 0 passed (licence 20, excluded term 8, too small 4, aspect 4, file type 4)');
   assert.ok(o.search_log.every(e => e.status === 'ok' && e.passed === 0));
-  // The run completes and nothing is remembered.
+  // The run completes and static data is untouched.
   assert.equal(r.nodes[CHECK][0].items[0].has_image, false);
-  assert.deepEqual(r.staticData.global.imageFinder.recent, []);
+  assert.deepEqual(r.staticData.global, {});
 });
 
 test('(e) the same photo from both providers is kept once', { skip, timeout: 300000 }, async () => {
@@ -335,7 +333,7 @@ test('(f) Commons pages in database order: "index" decides; Commons API and HTTP
   assert.ok(pos(150337412) < pos(148213907) && idx(148213907) < idx(150337412));
   const { out, cm } = await runCase('f-commons-index', {
     openverse: {},
-    commons: { 'Rolex Submariner Date': { json: reversed }, 'Rolex watch': 'maxlag', 'luxury wristwatch': { status: 503 } },
+    commons: { 'Rolex Submariner Date': { json: reversed }, 'Rolex watch': 'error-generic.json', 'luxury wristwatch': { status: 503 } },
   });
   assert.deepEqual(cm.map(q => q.response.status), [200, 200, 200, 503]);
   const [o] = out;
@@ -345,7 +343,7 @@ test('(f) Commons pages in database order: "index" decides; Commons API and HTTP
   assert.deepEqual(logOf(o), [
     [0, 'openverse', 'ok', '', 0, 0], [0, 'commons', 'ok', '', 11, 6],
     [1, 'openverse', 'ok', '', 0, 0], [1, 'commons', 'ok', '', 0, 0],
-    [2, 'openverse', 'ok', '', 0, 0], [2, 'commons', 'error', 'API maxlag', 0, 0],
+    [2, 'openverse', 'ok', '', 0, 0], [2, 'commons', 'error', 'API cirrussearch-backend-error', 0, 0],
     [3, 'openverse', 'ok', '', 0, 0], [3, 'commons', 'error', 'HTTP 503', 0, 0],
   ]);
 });
@@ -363,14 +361,11 @@ test('(g) two posts in one execution: one pick item each, paired to its own post
   assert.deepEqual(r.nodes[PICK][0].outputs.main[0].map(it => it.pairedItem), [
     [{ item: 0 }, { item: 1 }, { item: 2 }, { item: 3 }], [{ item: 4 }],
   ]);
-  // Both choices are remembered, in order.
-  const recent = r.staticData.global.imageFinder.recent;
-  assert.equal(recent.length, 2);
-  assert.equal(recent[0].key, 'commons:148213907');
-  assert.ok(recent[1].keys.includes('openverse:257ee03a-0c40-53ee-9ade-d0df7abffb89'));
+  // Nothing is written to static data; the two posts still got different photos (in-run memory).
+  assert.deepEqual(r.staticData.global, {});
 });
 
-test('(h) a recently used photo is penalised (-40); real intervals; the list keeps growing', { skip, timeout: 300000 }, async () => {
+test('(h) a recently used photo is penalised (-40); real intervals; the list is read, not written', { skip, timeout: 300000 }, async () => {
   const seed = { key: 'commons:148213907', keys: ['commons:148213907'], at: '2026-10-01T00:00:00.000Z' };
   const { r, out, ov } = await runCase('h-recently-used', {
     openverse: OV_OK, commons: { 'Rolex Submariner': 'search-rolex-submariner.json' },
@@ -384,9 +379,21 @@ test('(h) a recently used photo is penalised (-40); real intervals; the list kee
   assert.ok(old, 'the recently used photo is still an alternate');
   assert.equal(old.score, 13);
   assert.ok(old.reasons.includes('-40 recently used'));
-  const recent = r.staticData.global.imageFinder.recent;
-  assert.equal(recent.length, 2);
-  assert.deepEqual(recent[0], seed);
-  assert.notEqual(recent[1].key, seed.key);
-  assert.deepEqual(r.staticData.global.liveRunIds, { 'run-e2e-1': 'x' });
+  assert.deepEqual(r.staticData.global, { liveRunIds: { 'run-e2e-1': 'x' }, imageFinder: { recent: [seed] } });
+});
+
+test('(i) the Commons copy is personality-restricted: the Openverse copy of the same file is not used either', { skip, timeout: 300000 }, async () => {
+  const flagged = JSON.parse(JSON.stringify(CM_SUB));
+  const page = flagged.query.pages.find(p => p.pageid === 148213907);
+  page.imageinfo[0].extmetadata.Restrictions = { value: 'personality', source: 'commons-desc-page', hidden: '' };
+  const { out } = await runCase('i-veto', {
+    openverse: { 'Rolex Submariner Date': 'search-rolex-submariner-date.json' },
+    commons: { 'Rolex Submariner Date': { json: flagged } },
+  });
+  const [o] = out;
+  assert.ok(o.image, o.image_error);
+  assert.ok(!ids(o).includes('openverse:ed296e8f-1cb3-5e22-825d-ddbd552c338c'), 'Openverse copy of the flagged file');
+  assert.ok(!ids(o).includes('commons:148213907'));
+  assert.equal(o.image.id, 'd3e4d1e1-c069-5080-b265-b206da47bdea');
+  assert.deepEqual(o.search_log.slice(0, 2).map(e => [e.provider, e.results, e.passed]), [['openverse', 4, 3], ['commons', 11, 5]]);
 });

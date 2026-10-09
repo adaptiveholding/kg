@@ -71,13 +71,16 @@ test('Code nodes carry src/split-queries.js and src/pick-photo.js verbatim (runO
   }
 });
 
-test('Openverse node: GET /v1/images/ with q, the four licences, page_size 20, safe extensions, never "mature"', () => {
+test('Openverse node: GET /v1/images/ with q, the four licences, page_size 20, never "mature" or "extension"', () => {
   const n = byName[NAMES.openverse];
   assert.equal(n.parameters.url, 'https://api.openverse.org/v1/images/', 'trailing slash: /v1/images is a 301');
   assert.equal(n.parameters.method, undefined, 'GET is the default');
   assert.equal(n.parameters.authentication, undefined, 'no credential by default');
-  assert.deepEqual(params(n), { q: '={{ $json.q }}', license: 'by,by-sa,cc0,pdm', page_size: '20', extension: 'jpg,jpeg,png,webp' });
+  assert.deepEqual(params(n), { q: '={{ $json.q }}', license: 'by,by-sa,cc0,pdm', page_size: '20' });
   assert.ok(!('mature' in params(n)), 'mature=false would TURN ON sensitive results (media_serializers.py)');
+  // The indexer's "extension" is url.split('.')[-1]; for ".../X.jpg?utm_source=commons.wikimedia.org&..." that is
+  // "org&utm_campaign=...", so extension=jpg,... would silently drop Wikimedia rows (review finding).
+  assert.ok(!('extension' in params(n)));
   assert.deepEqual(headers(n), { 'User-Agent': USER_AGENT, Accept: 'application/json' });
   assert.deepEqual(n.parameters.options, { batching: { batch: { batchSize: 1, batchInterval: 3500 } }, timeout: 20000 });
   assert.equal(n.onError, 'continueRegularOutput');
@@ -91,8 +94,9 @@ test('Commons node: generator=search in the File namespace, bitmap only, imagein
     action: 'query', format: 'json', formatversion: '2', generator: 'search',
     gsrsearch: "={{ $('Image: split queries').item.json.q }} filetype:bitmap",
     gsrnamespace: '6', gsrlimit: '20', prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', iiurlwidth: '1920',
-    iiextmetadatafilter: COMMONS_EXTMETADATA.join('|'), iiextmetadatalanguage: 'en', maxlag: '5',
+    iiextmetadatafilter: COMMONS_EXTMETADATA.join('|'), iiextmetadatalanguage: 'en',
   });
+  assert.ok(!('maxlag' in params(n)), 'maxlag would turn a lag spike into a lost search (HTTP 200 error, no retry)');
   assert.deepEqual(headers(n), { 'User-Agent': USER_AGENT });
   assert.match(USER_AGENT, /^[A-Za-z]+\/\d+\.\d+ \(\+https:\/\/\S+\)$/, 'app/version plus a contact URL (Wikimedia UA policy)');
   assert.doesNotMatch(USER_AGENT, /GPTBot|CCBot|anthropic|axios|python|java/i);

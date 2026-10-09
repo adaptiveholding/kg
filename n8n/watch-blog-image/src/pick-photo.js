@@ -20,32 +20,57 @@ const MAX_ALTERNATES = 3;
 const COMMONS_THUMB_WIDTH = 1920;
 // -15 each (singular forms; a plural "s"/"es" also matches). Checked in title, human tags, description, categories.
 const NEGATIVE_TERMS = [
-  'box', 'papers', 'boutique', 'store', 'shop', 'advert', 'advertisement', 'advertising', 'poster', 'billboard',
-  'magazine', 'brochure', 'catalog', 'catalogue', 'movement', 'caliber', 'calibre', 'caseback', 'case back', 'strap',
+  'box', 'papers', 'boutique', 'store', 'shop', 'movement', 'caliber', 'calibre', 'caseback', 'case back', 'strap',
   'pocket watch', 'clock', 'illustration', 'drawing', 'sketch', 'diagram', 'render', 'rendering', 'cgi', '3d',
   'painting', 'artwork', 'packaging', 'auction', 'repair', 'disassembled',
 ];
-// Rejected when present in title, human tags, description or categories.
+// Rejected when present in title, human tags, description or categories. A human tag that merely contains one of
+// them ("fakerolex", "rolexlogo", "replicawatch") counts too. Printed matter (adverts, posters, catalogues) is
+// rejected rather than penalised: the photo's licence does not cover the ad or poster it reproduces.
 const HARD_EXCLUDE_TERMS = [
-  'replica', 'fake', 'counterfeit', 'knockoff', 'knock off', 'homage', 'imitation', 'lookalike', 'logo', 'logotype',
-  'wordmark', 'clipart', 'clip art', 'cake', 'toy', 'lego', 'tattoo', 'sticker', 'screenshot', 'meme',
+  'replica', 'replika', 'fake', 'counterfeit', 'knockoff', 'knock off', 'superclone', 'clone', 'homage', 'imitation',
+  'lookalike', 'faux', 'bootleg', 'not a rolex', 'notarolex', 'rep watch', 'repwatch', 'chinese copy',
+  'logo', 'logotype', 'wordmark', 'emblem', 'clipart', 'clip art', 'cake', 'toy', 'lego', 'tattoo', 'sticker',
+  'screenshot', 'meme', 'smartwatch', 'apple watch', 'applewatch',
+  'advert', 'advertisement', 'advertising', 'poster', 'billboard', 'magazine', 'brochure', 'catalog', 'catalogue',
 ];
+// Also rejected for brand and generic queries, where nothing else says the photo shows a wristwatch.
+const BRAND_LEVEL_EXCLUDE_TERMS = ['pocket watch', 'pocketwatch', 'clock', 'sundial', 'stopwatch'];
+// Openverse categories that are not photographs (null and "photograph" pass).
+const REJECT_CATEGORIES = ['illustration', 'digitized_artwork'];
 // Commons restriction-* values that reject a file ("trademarked" is normal for product photos and stays allowed).
 const REJECT_RESTRICTIONS = ['personality'];
-// Words that make a photo a watch photo (generic queries need one; see AMBIGUOUS_BRANDS). Any word containing
-// "watch" also counts (moonwatch, divewatch), except watching, watchtower and the like. "diver" alone does not
-// count (scuba photos), nor German "Uhr" ("10 Uhr") or French "montre" ("shows").
+// Commons "License" codes of public domain logos, shapes and other works too simple for copyright: not photos.
+const REJECT_COMMONS_LICENSE = /^pd-(textlogo|logo|shape|trivial|ineligible)/i;
+// Words that make a photo a watch photo. Any word containing "watch" also counts (moonwatch, divewatch), except
+// watching, watchtower, watchmaker, smartwatch and the like. "diver" alone does not count (scuba photos), nor
+// German "Uhr" ("10 Uhr") or French "montre" ("shows"). Brand and generic queries need one of these in the title,
+// human tags, description or categories (machine tags do not count there, and neither do WEAK_WATCH_WORDS).
 const WATCH_WORDS = [
   'watch', 'wristwatch', 'timepiece', 'chronograph', 'chronometer', 'dial', 'bezel', 'wristshot', 'horology',
   'horological', 'armbanduhr', 'reloj', 'orologio',
 ];
-// Brands that are also everyday words or other products. Brand queries need a watch word; model and family
-// queries need a watch word or a tag/category naming brand + family ("Omega Speedmaster"), so "Omega Centauri
-// in the constellation Centaurus" does not pass for "Omega Constellation".
+// Count only for model and family queries, where the brand and model words already matched (a phone has a dial too).
+const WEAK_WATCH_WORDS = ['dial', 'bezel'];
+// Brands that are also everyday words or other products. Model and family queries need a watch word or a
+// tag/category naming brand + family ("Omega Speedmaster"), so "Omega Centauri in the constellation Centaurus"
+// does not pass for "Omega Constellation". (Brand queries need a watch word for every brand.)
 const AMBIGUOUS_BRANDS = [
   'Omega', 'Tudor', 'Zenith', 'Hamilton', 'Oris', 'Ball', 'Sinn', 'Rado', 'Mido', 'Doxa', 'Fortis', 'Glycine', 'Eterna',
   'Citizen', 'Swatch', 'Hermes', 'Chanel', 'Gucci', 'Dior', 'Montblanc', 'Tiffany', 'Tiffany & Co.', 'Louis Vuitton',
   'Bulgari', 'Bvlgari', 'Porsche Design',
+];
+// Watch brands. A photo whose TITLE names one of these (or a brand from the post's watches) but not the query's
+// brand is another brand's watch ("Tudor Submariner" for "Rolex Submariner") and is rejected.
+const WATCH_BRANDS = [
+  'Rolex', 'Tudor', 'Omega', 'Patek Philippe', 'Audemars Piguet', 'Vacheron Constantin', 'A. Lange & Söhne',
+  'Jaeger-LeCoultre', 'Cartier', 'Breguet', 'Blancpain', 'IWC', 'Panerai', 'Breitling', 'TAG Heuer', 'Hublot', 'Zenith',
+  'Longines', 'Tissot', 'Hamilton', 'Seiko', 'Grand Seiko', 'Citizen', 'Casio', 'G-Shock', 'Swatch', 'Oris',
+  'Bell & Ross', 'Chopard', 'Bulgari', 'Bvlgari', 'Richard Mille', 'Ulysse Nardin', 'Girard-Perregaux', 'F.P. Journe',
+  'H. Moser & Cie', 'Glashütte Original', 'Nomos', 'Sinn', 'Doxa', 'Rado', 'Mido', 'Certina', 'Frederique Constant',
+  'Raymond Weil', 'Montblanc', 'Christopher Ward', 'Squale', 'Invicta', 'Steinhart', 'Parnis', 'Pagani Design',
+  'San Martin', 'Seestern', 'Heimdallr', 'Corum', 'Piaget', 'Jaquet Droz', 'Parmigiani', 'MB&F',
+  'Bremont', 'Fortis', 'Junghans', 'Stowa', 'Laco', 'Timex', 'Orient', 'Vostok', 'Raketa', 'Glycine', 'Eterna',
 ];
 // Same short names as step 2 ("Image: build queries").
 const BRAND_ALIASES = {
@@ -60,13 +85,29 @@ const BRAND_ALIASES = {
 const BRAND_COMMON_WORDS = [
   'grand', 'original', 'tag', 'richard', 'bell', 'ross', 'royal', 'swiss', 'international', 'watch', 'watches',
   'company', 'sohne', 'sons', 'freres', 'geneve', 'geneva', 'glashutte', 'philippe', 'constantin', 'louis', 'maurice',
-  'raymond', 'frederique', 'constant', 'christopher', 'ward', 'carl', 'design', 'military', 'lange', 'seiko',
+  'raymond', 'frederique', 'constant', 'christopher', 'ward', 'carl', 'design', 'military', 'lange', 'seiko', 'san',
+  'martin', 'shock', 'cie',
 ];
-// Openverse source codes -> display names (from /v1/images/stats/).
+// Openverse source codes -> display names (from /v1/images/stats/); other codes are shown title-cased.
 const SOURCE_NAMES = {
   flickr: 'Flickr', wikimedia: 'Wikimedia Commons', stocksnap: 'StockSnap.io', rawpixel: 'Rawpixel', nappy: 'Nappy',
   wordpress: 'WP Photo Directory', geographorguk: 'Geograph Britain and Ireland', inaturalist: 'iNaturalist', nasa: 'NASA',
+  animaldiversity: 'Animal Diversity Web', bio_diversity: 'Biodiversity Heritage Library', brooklynmuseum: 'Brooklyn Museum',
+  clevelandmuseum: 'Cleveland Museum of Art', capl: 'Culturally Authentic Pictorial Lexicon', spacex: 'SpaceX',
+  deviantart: 'DeviantArt', svgsilh: 'SVG Silh', digitaltmuseum: 'Digitalt Museum', thingiverse: 'Thingiverse',
+  thorvaldsensmuseum: 'Thorvaldsens Museum', worms: 'World Register of Marine Species', nypl: 'New York Public Library',
+  floraon: 'Flora-On', met: 'Metropolitan Museum of Art', mccordmuseum: 'McCord Museum', museumsvictoria: 'Museums Victoria',
+  phylopic: 'PhyloPic', rijksmuseum: 'Rijksmuseum', sciencemuseum: 'Science Museum - UK', sketchfab: 'Sketchfab',
+  woc_tech: 'WOCinTech Chat', smithsonian_american_history_museum: 'Smithsonian Institution: National Museum of American History',
+  smithsonian_air_and_space_museum: 'Smithsonian Institution: National Air and Space Museum',
+  smithsonian_cooper_hewitt_museum: 'Smithsonian Institution: Cooper Hewitt Smithsonian Design Museum',
+  smithsonian_institution_archives: 'Smithsonian Institution Archives', smithsonian_libraries: 'Smithsonian Institution: Smithsonian Libraries',
 };
+// Write each chosen photo to $getWorkflowStaticData('global').imageFinder.recent here? Off by default: n8n saves the
+// WHOLE static data object at the end of every non-editor run, so a run that writes here (a Watch Centro test run
+// included) can overwrite the liveRunIds that an overlapping live run saved, and a test pick would count as "used".
+// Step 5 records the photo once it is really used, on the live branch (image.recent_keys). Reading is always on.
+const REMEMBER_CHOSEN = false;
 
 // --- Text helpers ---------------------------------------------------------------------------------
 const str = v => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : (typeof v === 'number' ? String(v) : ''));
@@ -152,23 +193,49 @@ for (const [brand, aliases] of Object.entries(BRAND_ALIASES)) {
 const COMMON_SET = new Set(BRAND_COMMON_WORDS);
 const AMBIGUOUS = new Set(AMBIGUOUS_BRANDS.map(norm));
 const WATCH_NORMS = WATCH_WORDS.map(norm);
+const STRONG_WATCH_NORMS = WATCH_WORDS.filter(w => !WEAK_WATCH_WORDS.includes(w)).map(norm);
 const NEG_NORMS = NEGATIVE_TERMS.map(t => [t, norm(t)]);
 const EXCL_NORMS = HARD_EXCLUDE_TERMS.map(t => [t, norm(t)]);
+const LEVEL_EXCL_NORMS = BRAND_LEVEL_EXCLUDE_TERMS.map(t => [t, norm(t)]);
+const canonOf = b => ALIAS_TO_BRAND[norm(b)] || b;
+// Spellings or lines of one brand: never "another brand" of each other.
+const SAME_BRANDS = [['Bulgari', 'Bvlgari'], ['Casio', 'G-Shock']].map(g => g.map(norm));
+const sameBrand = (a, b) => norm(canonOf(a)) === norm(canonOf(b)) ||
+  SAME_BRANDS.some(g => g.includes(norm(canonOf(a))) && g.includes(norm(canonOf(b))));
 
-function brandNeedles(brand, level) {
-  const canonical = ALIAS_TO_BRAND[norm(brand)] || brand;
+// Ways the query brand can be named. famSrc: two-letter short names (AP, VC, GS) only count as "<short> <family>"
+// ("AP Royal Oak"), never alone ("The Royal Oak pub" tagged "ap").
+function brandNeedles(brand, level, famSrc) {
+  const canonical = canonOf(brand);
   const out = new Set([...variants(brand), ...variants(canonical)]);
   for (const a of BRAND_ALIASES[canonical] || []) {
-    // Two-letter short names (AP, VC, GS) are too weak on their own for a brand-only query.
-    if (level === 'brand' && compact(a).length <= 2) continue;
+    if (compact(a).length <= 2) {
+      if (level !== 'brand' && famSrc) for (const v of variants(a + ' ' + famSrc)) out.add(v);
+      continue;
+    }
     for (const v of variants(a)) out.add(v);
   }
   const toks = norm(canonical).split(' ').filter(Boolean);
   if (toks.length > 1) for (const t of toks) if (t.length >= 4 && !COMMON_SET.has(t)) out.add(t);
   return [...out].filter(Boolean);
 }
+// Ways another brand can be named in a title (short names of 3+ characters, distinctive words).
+const rivalCache = new Map();
+function rivalNeedles(brand) {
+  const key = norm(brand);
+  if (!rivalCache.has(key)) {
+    const canonical = canonOf(brand);
+    const out = new Set([...variants(brand), ...variants(canonical)]);
+    for (const a of BRAND_ALIASES[canonical] || []) if (compact(a).length >= 3) for (const v of variants(a)) out.add(v);
+    const toks = norm(canonical).split(' ').filter(Boolean);
+    if (toks.length > 1) for (const t of toks) if (t.length >= 4 && !COMMON_SET.has(t)) out.add(t);
+    rivalCache.set(key, [...out].filter(Boolean));
+  }
+  return rivalCache.get(key);
+}
 
-// Text of one candidate. `full` (positive evidence) also has machine tags; `strict` (exclusions, penalties) does not.
+// Text of one candidate. `full` (positive evidence) also has machine tags; `strict` (exclusions, penalties) does not;
+// `named` (where a brand must be named) is the title plus human tags / Commons categories, without descriptions.
 function textInfo(title, humanTags, machineTags, extra) {
   const human = humanTags.map(norm).filter(Boolean);
   const machine = machineTags.map(norm).filter(Boolean);
@@ -176,6 +243,8 @@ function textInfo(title, humanTags, machineTags, extra) {
   return {
     full: pad(norm([strictText, machine.join(' ')].join(' '))),
     strict: pad(strictText),
+    named: pad(norm([title, human.join(' ')].join(' '))),
+    title: pad(norm(title)),
     tags: human.concat(machine).map(t => t.replace(/ /g, '')),
     strictTags: human.map(t => t.replace(/ /g, '')),
   };
@@ -183,39 +252,59 @@ function textInfo(title, humanTags, machineTags, extra) {
 // Flickr-style concatenated tags ("rolexsubmariner"): a whole name of 4+ characters may sit inside a tag, a single
 // word only from 5 characters ("nodate" must not prove "date").
 const tagIncludes = (info, c) => c.length >= 4 && info.tags.some(t => t.includes(c));
-const phraseIn = (info, phrase) => hasPhrase(info.full, phrase) || tagIncludes(info, phrase.replace(/ /g, ''));
 const tokenIn = (info, t) => hasPhrase(info.full, t) || (t.length >= 5 && tagIncludes(info, t));
-const isWatchToken = t => t.includes('watch') && !/watch(ing|ed|ers?|towers?|m[ae]n|dogs?|ful|list|words?|keepers?)$/.test(t) &&
-  !/^(bird|whale|night)watch/.test(t);
-function hasWatchWord(info) {
-  return WATCH_NORMS.some(w => hasTerm(info.full, w)) || info.full.split(' ').some(isWatchToken) ||
-    info.tags.some(t => isWatchToken(t) || t.includes('chronograph'));
+const namedIn = (info, phrase) => {
+  const c = phrase.replace(/ /g, '');
+  return hasPhrase(info.named, phrase) || (c.length >= 4 && info.strictTags.some(t => t.includes(c)));
+};
+const isWatchToken = t => t.includes('watch') &&
+  !/watch(ing|ed|ers?|towers?|m[ae]n|dogs?|ful|list|words?|keepers?|mak(er|ers|ing)|bands?)$/.test(t) &&
+  !/^(bird|whale|night|smart|apple|stop|s)watch/.test(t);
+// strong: title, human tags, description and categories only, and not "dial" or "bezel" alone.
+function hasWatchWord(info, strong) {
+  const text = strong ? info.strict : info.full;
+  const tags = strong ? info.strictTags : info.tags;
+  return (strong ? STRONG_WATCH_NORMS : WATCH_NORMS).some(w => hasTerm(text, w)) || text.split(' ').some(isWatchToken) ||
+    tags.some(t => isWatchToken(t) || t.includes('chronograph'));
 }
+// Terms in the text, or a human tag that is (or, loose, contains) the term: "fakerolex", "rolexlogo".
+// "meme" is only matched whole ("mementomori" is a watch theme).
 function termsIn(info, list, loose) {
   const hits = [];
   for (const [label, n] of list) {
     const c = n.replace(/ /g, '');
-    // loose: concatenated tags such as "replicawatch" or "rolexreplica" (long terms only: "meme" is in "memento").
-    const tagHit = info.strictTags.some(t => t === c || t === c + 's' ||
-      (loose && c.length >= 6 && (t.startsWith(c) || t.endsWith(c))));
+    const tagHit = info.strictTags.some(t => t === c || t === c + 's' || (loose && c.length >= 4 && c !== 'meme' && t.includes(c)));
     if (hasTerm(info.strict, n) || tagHit) hits.push(label);
   }
   return hits;
 }
+// The title names another watch brand and not the query brand ("Tudor Submariner" for "Rolex Submariner").
+function rivalInTitle(info, q, postBrands) {
+  const own = brandNeedles(q.brand, 'model', q.model_family || q.model);
+  if (own.some(n => hasPhrase(info.title, n))) return '';
+  for (const b of WATCH_BRANDS.concat(postBrands || [])) {
+    if (!b || sameBrand(b, q.brand)) continue;
+    if (rivalNeedles(b).some(n => hasPhrase(info.title, n))) return b;
+  }
+  return '';
+}
 
-// Level rules: model/family need the brand and every family token; brand needs the brand; generic a watch word.
-function relevance(info, q) {
-  const r = { ok: false, modelHit: false, refHit: false, watchWord: hasWatchWord(info) };
+// Level rules: model/family need the brand (named in title, tags or categories), every family token and no other
+// brand in the title; brand needs the brand and a watch word; generic a watch word.
+function relevance(info, q, postBrands) {
+  const r = { ok: false, modelHit: false, refHit: false, watchWord: hasWatchWord(info, false), strongWatch: hasWatchWord(info, true), rival: '' };
   const level = q.level;
   if (level === 'generic' || !q.brand) {
-    r.ok = r.watchWord;
+    r.ok = r.strongWatch;
     return r;
   }
-  if (!brandNeedles(q.brand, level).some(n => phraseIn(info, n))) return r;
-  const canonical = ALIAS_TO_BRAND[norm(q.brand)] || q.brand;
-  const ambiguous = AMBIGUOUS.has(norm(canonical)) || AMBIGUOUS.has(norm(q.brand));
-  if (level === 'brand') { r.ok = r.watchWord || !ambiguous; return r; }
   const famSrc = q.model_family || q.model;
+  if (!brandNeedles(q.brand, level, famSrc).some(n => namedIn(info, n))) return r;
+  r.rival = rivalInTitle(info, q, postBrands);
+  if (r.rival) return r;
+  const canonical = canonOf(q.brand);
+  const ambiguous = AMBIGUOUS.has(norm(canonical)) || AMBIGUOUS.has(norm(q.brand));
+  if (level === 'brand') { r.ok = r.strongWatch; return r; }
   const famOk = !famSrc || variants(famSrc).some(v => {
     const toks = v.split(' ').filter(t => t && !TOKEN_STOP.has(t));
     return toks.every(t => tokenIn(info, t)) || tagIncludes(info, v.replace(/ /g, ''));
@@ -316,13 +405,27 @@ function decideLicense(names, url, usageTerms, nonFree) {
 }
 
 // --- Creators ---------------------------------------------------------------------------------------
-const UNKNOWN_CREATOR = /^(unknown( author| photographer| artist)?|author unknown|anonymous|anon\.?|not provided|n\/?a|none|-+|\?+)$/i;
+// "No author given", in the languages Commons files use most.
+const UNKNOWN_CREATOR = new RegExp('^(unknown( author| photographer| artist)?|author unknown|anonymous|anonym[eo]?|anonimo|' +
+  'anon\\.?|unbekannte?r?( (autor|fotograf|urheber))?|(auteur |photographe )?inconnue?|(autor |fotografo )?desconocido|' +
+  '(autore |fotografo )?sconosciuto|onbekend|okand|nieznany|not provided|n\\/?a|none|-+|\\?+)$', 'i');
 function cleanCreator(s) {
   let t = htmlText(s);
   const m = t.match(/^The original uploader was (.+?) at (.+?)\.?$/i);
   if (m) t = `${m[1]} at ${m[2]}`;
-  if (!t || UNKNOWN_CREATOR.test(t) || /lacking author information/i.test(t)) return '';
+  if (!t || UNKNOWN_CREATOR.test(norm(t)) || UNKNOWN_CREATOR.test(t) || /lacking author information/i.test(t)) return '';
   return plain(t, 120);
+}
+// Commons "Attribution": the credit the licensor asks for ("Foto: Kronograph / Wikimedia Commons / CC BY-SA 3.0 DE").
+// CC BY / BY-SA require that requested name, so it wins over Artist. The "Photo:" label and the parts that only
+// repeat the source or the licence are dropped (the credit line adds those itself).
+function requestedCredit(html) {
+  let t = htmlText(html).replace(/^(?:©|\(c\)|copyright)\s*/i, '');
+  t = t.replace(/^(?:photo(?:graph)?|foto(?:grafie)?|image|picture|bild|credit)s?\s*(?::\s*|by\s+|von\s+|de\s+)(?:by\s+)?/i, '');
+  const parts = t.split(/\s+[/|]\s+/).map(x => x.trim()).filter(x => x &&
+    !/^(via |from )?wikimedia commons$/i.test(x) && !/^(own work|eigenes werk)$/i.test(x) &&
+    (parseLicenseName(x) || { code: 'other' }).code === 'other');
+  return cleanCreator(parts.join(' / '));
 }
 function artistUrl(html) {
   const m = String(html || '').match(/<a\b[^>]*\bhref="([^"]+)"/i);
@@ -368,57 +471,67 @@ function wikimediaFile(url, thumburl, w, h) {
 
 // --- Provider records -> candidates ------------------------------------------------------------------
 const posInt = v => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.round(v) : null);
-const reject = (category, detail) => ({ reject: category, detail: detail || category });
+// ident: who the photo is (ids, URLs, title, size), so a rejection can also veto its copy at the other provider.
+const reject = (category, detail, ident) => ({ reject: category, detail: detail || category, ident: ident || null });
+// Rejections that say something about the photo itself. Openverse indexes Commons and Flickr, and Commons holds
+// Flickr copies, so the same photo with one of these verdicts at one provider is dropped at the other one too
+// (Commons knows restrictions, NonFree and licence reviews that Openverse does not carry).
+const VETO_REJECTS = ['licence', 'personality', 'mature', 'excluded term', 'not a photo'];
 
 // Checks shared by both providers once a record is normalised.
 function commonChecks(c) {
-  if (!isHttp(c.file_url) || !isHttp(c.landing_url)) return reject('missing url');
-  if (!c.extension || !ALLOWED_EXT.includes(c.extension) || (c.mime && !ALLOWED_MIME.includes(c.mime))) return reject('file type', 'file type ' + (c.extension || c.mime || 'unknown'));
-  if (c._ow !== null && c._ow < MIN_WIDTH) return reject('too small');
+  if (!isHttp(c.file_url) || !isHttp(c.landing_url)) return reject('missing url', '', c);
+  if (!c.extension || !ALLOWED_EXT.includes(c.extension) || (c.mime && !ALLOWED_MIME.includes(c.mime))) return reject('file type', 'file type ' + (c.extension || c.mime || 'unknown'), c);
+  if (c._ow !== null && c._ow < MIN_WIDTH) return reject('too small', '', c);
   if (c._ow !== null && c._oh !== null) {
     const a = c._ow / c._oh;
-    if (a < MIN_ASPECT || a > MAX_ASPECT) return reject('aspect');
+    if (a < MIN_ASPECT || a > MAX_ASPECT) return reject('aspect', '', c);
   }
   const ex = termsIn(c._info, EXCL_NORMS, true);
-  if (ex.length) return reject('excluded term', 'excluded term ' + ex[0]);
+  if (ex.length) return reject('excluded term', 'excluded term ' + ex[0], c);
   return null;
 }
 
 function fromOpenverse(r, pos) {
   if (!r || typeof r !== 'object' || Array.isArray(r)) return reject('bad record');
+  const url = absUrl(str(r.url));
+  const landing = absUrl(str(r.foreign_landing_url));
+  const ow = posInt(r.width);
+  const oh = posInt(r.height);
+  const title = plain(cleanTitle(r.title), 300);
+  const isWikimedia = /(^|\.)upload\.wikimedia\.org$/i.test((url.match(/^https?:\/\/([^/]+)/i) || [])[1] || '');
+  const curid = curidOf(landing);
+  const ident = {
+    provider: 'openverse', id: str(r.id), title, landing_url: landing, file_url: url, _origUrl: url, _ow: ow, _oh: oh,
+    _commonsId: curid, _flickrId: flickrIdOf(landing, url) || (isWikimedia || curid ? flickrIdInTitle(title) : ''),
+  };
   // Openverse license codes: cc0, pdm, by, by-sa (the request asks for these), by-nc, by-nd, ... (rejected).
   const code = str(r.license).toLowerCase();
   const name = code === 'cc0' || code === 'pdm' ? code : (code ? 'cc ' + code + ' ' + str(r.license_version) : '');
   const d = decideLicense([name], r.license_url, '', '');
-  if (d.reject) return d;
-  if (r.mature === true || (Array.isArray(r.unstable__sensitivity) && r.unstable__sensitivity.length)) return reject('mature');
-  const url = absUrl(str(r.url));
-  const landing = absUrl(str(r.foreign_landing_url));
+  if (d.reject) return reject(d.reject, d.detail, ident);
+  if (r.mature === true || (Array.isArray(r.unstable__sensitivity) && r.unstable__sensitivity.length)) return reject('mature', '', ident);
+  const category = str(r.category).toLowerCase();
+  if (REJECT_CATEGORIES.includes(category)) return reject('not a photo', 'category ' + category, ident);
   // filetype is often null (older Flickr rows); the URL extension is what Openverse's own extension filter uses.
   const urlExt = extOf(url);
   const ft = str(r.filetype).toLowerCase();
   const extension = ft && !ALLOWED_EXT.includes(ft) ? ft : (urlExt || ft);
-  const ow = posInt(r.width);
-  const oh = posInt(r.height);
   const source = str(r.source || r.provider).toLowerCase();
   const tags = Array.isArray(r.tags) ? r.tags.filter(t => t && typeof t === 'object' && typeof t.name === 'string') : [];
   const human = tags.filter(t => t.accuracy === null || t.accuracy === undefined).map(t => t.name);
   const machine = tags.filter(t => !(t.accuracy === null || t.accuracy === undefined)).map(t => t.name);
-  const title = plain(cleanTitle(r.title), 300);
-  const isWikimedia = /(^|\.)upload\.wikimedia\.org$/i.test((url.match(/^https?:\/\/([^/]+)/i) || [])[1] || '');
   const file = isWikimedia && ow && oh ? wikimediaFile(url, '', ow, oh) : { file_url: url, width: ow, height: oh };
   const creator = cleanCreator(r.creator);
-  const curid = curidOf(landing);
+  const sourceName = SOURCE_NAMES[source] || (source ? source.replace(/_/g, ' ').replace(/\s+/g, ' ').trim().replace(/\b[a-z]/g, x => x.toUpperCase()) : 'Openverse');
   const c = {
-    provider: 'openverse',
-    source_name: SOURCE_NAMES[source] || (source ? source.replace(/^./, x => x.toUpperCase()) : 'Openverse'),
-    id: str(r.id), title, creator, creator_url: isHttp(r.creator_url) ? r.creator_url.trim() : '',
+    ...ident,
+    source_name: sourceName, creator, creator_url: isHttp(r.creator_url) ? r.creator_url.trim() : '',
     ...licenseFields(d.lic, r.license_url),
     landing_url: landing, file_url: file.file_url, width: file.width, height: file.height,
     extension, mime: MIME[extension] || '', attribution_required: d.lic.code === 'by' || d.lic.code === 'by-sa',
-    _ow: ow, _oh: oh, _pos: pos, _origUrl: url,
-    _commonsId: curid, _flickrId: flickrIdOf(landing, url) || (isWikimedia || curid ? flickrIdInTitle(title) : ''),
-    _info: textInfo(str(r.title), human.concat(r.category ? [String(r.category).replace(/_/g, ' ')] : []), machine, ''),
+    _pos: pos,
+    _info: textInfo(str(r.title), human.concat(category ? [category.replace(/_/g, ' ')] : []), machine, ''),
   };
   return commonChecks(c) || { cand: c };
 }
@@ -433,16 +546,23 @@ function fromCommons(page, pos) {
     if (v && typeof v === 'object' && !Array.isArray(v)) return v.value === null || v.value === undefined ? '' : String(v.value);
     return typeof v === 'string' || typeof v === 'number' ? String(v) : '';
   };
-  const d = decideLicense([meta('LicenseShortName'), meta('License')], meta('LicenseUrl'), meta('UsageTerms'), meta('NonFree'));
-  if (d.reject) return d;
-  const restrictions = meta('Restrictions').toLowerCase().split('|').map(s => s.trim()).filter(Boolean);
-  const bad = restrictions.find(x => REJECT_RESTRICTIONS.includes(x));
-  if (bad) return reject('personality', 'restriction ' + bad);
   const rawTitle = str(page.title);
   const title = plain(cleanTitle(rawTitle), 300);
   const ow = posInt(ii.width);
   const oh = posInt(ii.height);
   const url = absUrl(str(ii.url));
+  const ident = {
+    provider: 'commons', id: page.pageid === undefined || page.pageid === null ? '' : String(page.pageid), title,
+    landing_url: absUrl(str(ii.descriptionurl || ii.descriptionshorturl)), file_url: url, _origUrl: url, _ow: ow, _oh: oh,
+    _commonsId: page.pageid ? String(page.pageid) : curidOf(ii.descriptionshorturl),
+    _flickrId: flickrIdInTitle(title) || flickrIdOf(meta('Credit').match(/href="([^"]+)"/i)?.[1] || ''),
+  };
+  const d = decideLicense([meta('LicenseShortName'), meta('License')], meta('LicenseUrl'), meta('UsageTerms'), meta('NonFree'));
+  if (d.reject) return reject(d.reject, d.detail, ident);
+  if (REJECT_COMMONS_LICENSE.test(meta('License').trim())) return reject('licence', 'public domain logo or simple shape', ident);
+  const restrictions = meta('Restrictions').toLowerCase().split('|').map(s => s.trim()).filter(Boolean);
+  const bad = restrictions.find(x => REJECT_RESTRICTIONS.includes(x));
+  if (bad) return reject('personality', 'restriction ' + bad, ident);
   const extension = extOf(rawTitle) || extOf(url);
   const file = wikimediaFile(url, absUrl(str(ii.thumburl)), ow, oh);
   const mime = str(ii.mime).toLowerCase();
@@ -450,17 +570,14 @@ function fromCommons(page, pos) {
   const description = [htmlText(meta('ObjectName')), htmlText(meta('ImageDescription'))].join(' ');
   const artist = meta('Artist');
   const c = {
-    provider: 'commons', source_name: 'Wikimedia Commons',
-    id: page.pageid === undefined || page.pageid === null ? '' : String(page.pageid),
-    title, creator: cleanCreator(artist), creator_url: artistUrl(artist),
+    ...ident,
+    source_name: 'Wikimedia Commons',
+    creator: requestedCredit(meta('Attribution')) || cleanCreator(artist), creator_url: artistUrl(artist),
     ...licenseFields(d.lic, meta('LicenseUrl')),
-    landing_url: absUrl(str(ii.descriptionurl || ii.descriptionshorturl)),
     file_url: file.file_url, width: file.width, height: file.height,
     extension, mime: ALLOWED_MIME.includes(mime) ? mime : (mime || MIME[extension] || ''),
     attribution_required: d.lic.code === 'by' || d.lic.code === 'by-sa' || /^true$/i.test(meta('AttributionRequired').trim()),
-    _ow: ow, _oh: oh, _pos: pos, _origUrl: url,
-    _commonsId: page.pageid ? String(page.pageid) : curidOf(ii.descriptionshorturl),
-    _flickrId: flickrIdInTitle(title) || flickrIdOf(meta('Credit').match(/href="([^"]+)"/i)?.[1] || ''),
+    _pos: pos,
     _info: textInfo(rawTitle.replace(/^file:/i, '').replace(FILE_EXT_RE, ''), categories, [], description),
   };
   return commonChecks(c) || { cand: c };
@@ -480,6 +597,12 @@ function keysOf(c) {
 }
 const primaryKey = keys => keys.find(k => k.startsWith('commons:')) || keys.find(k => k.startsWith('flickr:')) ||
   keys.find(k => k.startsWith('file:')) || keys[0] || '';
+// Keys worth remembering (title + size and landing pages are dedupe-only), the primary key first.
+function recentKeysOf(c) {
+  const keys = c._keys.filter(k => !k.startsWith('td:') && !k.startsWith('page:'));
+  const key = primaryKey(c._keys);
+  return [key].concat(keys.filter(k => k !== key)).filter(Boolean);
+}
 
 // --- Scoring ----------------------------------------------------------------------------------------
 function scoreOf(c, q, rel, recent) {
@@ -495,7 +618,6 @@ function scoreOf(c, q, rel, recent) {
   for (const t of termsIn(c._info, NEG_NORMS, false)) add(-15, 'negative term ' + t);
   if (!known) add(-10, 'unknown dimensions');
   if (c._creatorUnknown && c.attribution_required) add(-10, 'creator unknown');
-  if (q.level === 'brand' && !rel.watchWord) add(-10, 'no watch word');
   if (c._keys.some(k => recent.has(k))) add(-40, 'recently used');
   return { score, reasons };
 }
@@ -545,6 +667,8 @@ function present(c) {
   out.alt_text = altFor(c._q, c);
   out.credit_text = creditFor(c);
   out.download_filename = filenameFor(out.alt_text, c);
+  // What step 5 records in the static data once the photo is really used (see REMEMBER_CHOSEN).
+  out.recent_keys = recentKeysOf(c);
   return out;
 }
 
@@ -641,10 +765,12 @@ function providerSummary(name, s) {
   return `${name}: ${parts.join(', ') || 'no searches'}`;
 }
 
-function pickForPost(entries, recent) {
+function pickForPost(entries, recent, postBrands) {
   const search_log = [];
   const stats = { openverse: emptyStats(), commons: emptyStats() };
   const candidates = [];
+  const vetoed = new Set();
+  const count = (s, why) => { s.rejects[why] = (s.rejects[why] || 0) + 1; };
   for (const e of entries) {
     const q = e.query;
     for (const provider of ['openverse', 'commons']) {
@@ -671,15 +797,24 @@ function pickForPost(entries, recent) {
       records.forEach((rec, pos) => {
         let res;
         try { res = provider === 'openverse' ? fromOpenverse(rec, pos) : fromCommons(rec, pos); } catch (err) { res = reject('bad record'); }
-        if (res.reject) { s.rejects[res.reject] = (s.rejects[res.reject] || 0) + 1; return; }
+        if (res.reject) {
+          count(s, res.reject);
+          if (res.ident && VETO_REJECTS.includes(res.reject)) for (const k of keysOf(res.ident)) vetoed.add(k);
+          return;
+        }
         const c = res.cand;
-        const rel = relevance(c._info, q);
-        if (!rel.ok) { s.rejects['not relevant'] = (s.rejects['not relevant'] || 0) + 1; return; }
+        const rel = relevance(c._info, q, postBrands);
+        if (!rel.ok) { count(s, rel.rival ? 'other brand' : 'not relevant'); return; }
+        if ((q.level === 'brand' || q.level === 'generic' || !q.brand) && termsIn(c._info, LEVEL_EXCL_NORMS, true).length) {
+          count(s, 'not a wristwatch');
+          return;
+        }
         c._creatorUnknown = !c.creator;
         if (!c.creator) c.creator = 'Unknown author';
         c._modelHit = rel.modelHit;
         c._q = q;
         c._keys = keysOf(c);
+        c._log = log;
         c.query = { rank: q.rank, q: q.q, level: q.level, watch_index: q.watch_index };
         const sc = scoreOf(c, q, rel, recent);
         c.score = sc.score;
@@ -689,6 +824,15 @@ function pickForPost(entries, recent) {
         s.passed++;
       });
     }
+  }
+  // A copy of a photo that the other provider rejected (licence, personality, mature, excluded term) is dropped too.
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const c = candidates[i];
+    if (!c._keys.some(k => vetoed.has(k))) continue;
+    candidates.splice(i, 1);
+    c._log.passed--;
+    stats[c.provider].passed--;
+    count(stats[c.provider], 'copy rejected elsewhere');
   }
   // Same photo from both providers (Openverse indexes Commons and Flickr) or from two queries: keep the better copy.
   candidates.sort(better);
@@ -718,19 +862,24 @@ const splits = nodeItems(() => $('Image: split queries').all()) || [];
 const ovItems = nodeItems(() => $('Image: search Openverse').all());
 const cmItems = nodeItems(() => $('Image: search Commons').all());
 
-// Recently chosen photos live in the workflow static data (saved for production runs, not for editor test runs).
-let store = { recent: [] };
+// Recently chosen photos: $getWorkflowStaticData('global').imageFinder.recent = [{key, keys, at}]. Read only, unless
+// REMEMBER_CHOSEN is on: even repairing a missing list would be a write, and n8n then saves the whole static data.
+let store = null;
 try {
   const g = $getWorkflowStaticData('global');
   if (g && typeof g === 'object') {
-    if (!g.imageFinder || typeof g.imageFinder !== 'object' || Array.isArray(g.imageFinder)) g.imageFinder = {};
-    if (!Array.isArray(g.imageFinder.recent)) g.imageFinder.recent = [];
-    store = g.imageFinder;
+    if (REMEMBER_CHOSEN) {
+      if (!g.imageFinder || typeof g.imageFinder !== 'object' || Array.isArray(g.imageFinder)) g.imageFinder = {};
+      if (!Array.isArray(g.imageFinder.recent)) g.imageFinder.recent = [];
+    }
+    if (g.imageFinder && typeof g.imageFinder === 'object' && Array.isArray(g.imageFinder.recent)) store = g.imageFinder;
   }
 } catch (e) { /* no static data: nothing is remembered */ }
+// Photos chosen earlier in this execution (two posts of one run never share a photo, whatever REMEMBER_CHOSEN is).
+const chosenThisRun = new Set();
 const recentSet = () => {
-  const s = new Set();
-  for (const r of Array.isArray(store.recent) ? store.recent : []) {
+  const s = new Set(chosenThisRun);
+  for (const r of store && Array.isArray(store.recent) ? store.recent : []) {
     if (typeof r === 'string') s.add(r);
     else if (r && typeof r === 'object') {
       if (typeof r.key === 'string') s.add(r.key);
@@ -741,21 +890,21 @@ const recentSet = () => {
 };
 function remember(c) {
   try {
-    const keys = c._keys.filter(k => !k.startsWith('td:') && !k.startsWith('page:'));
-    const key = primaryKey(c._keys);
+    const keys = recentKeysOf(c);
+    for (const k of keys) chosenThisRun.add(k);
+    if (!REMEMBER_CHOSEN || !store) return;
     const old = Array.isArray(store.recent) ? store.recent : [];
     const kept = old.filter(r => {
       const rk = typeof r === 'string' ? [r] : (r && typeof r === 'object' ? [r.key].concat(Array.isArray(r.keys) ? r.keys : []) : []);
-      return !rk.some(k => keys.includes(k) || k === key);
+      return !rk.some(k => keys.includes(k));
     });
-    kept.push({ key, keys, at: new Date().toISOString() });
+    kept.push({ key: keys[0], keys, at: new Date().toISOString() });
     store.recent = kept.slice(-RECENT_LIMIT); // a new array, so n8n sees the change
   } catch (e) { /* remembering is best effort */ }
 }
 
-const out = [];
-try {
-  // Which query (split item) each search response belongs to.
+// Which query (split item) each search response belongs to, and which post each query belongs to.
+function alignment() {
   const ovSplit = ovItems ? parentIndexes(ovItems, splits.length) : [];
   const cmSplit = cmItems
     ? cmItems.map((it, j) => {
@@ -773,6 +922,26 @@ try {
     if (pp !== null && pp >= 0 && (!posts.length || pp < posts.length)) return pp;
     return posts.length <= 1 ? 0 : -1;
   });
+  return { ovSplit, cmSplit, splitPost };
+}
+let al = null;
+try { al = alignment(); } catch (e) { al = null; }
+// pairedItem of post p: every search item of its queries (they all trace back to post p upstream). A post without
+// queries has no input item to point at.
+function inputsOf(p) {
+  try {
+    if (!al) return [];
+    const ks = new Set(al.splitPost.map((pp, k) => (pp === p ? k : -1)).filter(k => k >= 0));
+    if (!cmItems) return [...ks];
+    return al.cmSplit.map((sk, i) => (ks.has(sk) ? i : -1)).filter(i => i >= 0);
+  } catch (e) { return []; }
+}
+const postBrandsOf = pj => (Array.isArray(pj.watches) ? pj.watches : []).map(w => (w && typeof w.brand === 'string' ? w.brand : '')).filter(Boolean);
+
+const out = [];
+try {
+  if (!al) throw new Error('could not match the search responses to their queries');
+  const { ovSplit, cmSplit, splitPost } = al;
   const nPosts = Math.max(posts.length, ...splitPost.map(p => p + 1), 0);
   const byPost = Array.from({ length: nPosts }, () => []);
   splits.forEach((s, k) => {
@@ -792,7 +961,6 @@ try {
       query,
       openverse: ovItems ? ovItems.filter((_, i) => ovSplit[i] === k) : null,
       commons: cmItems ? cmItems.filter((_, i) => cmSplit[i] === k) : null,
-      inputs: cmItems ? cmSplit.map((sk, i) => (sk === k ? i : -1)).filter(i => i >= 0) : [k],
     });
   });
 
@@ -801,13 +969,11 @@ try {
     const entries = byPost[p].sort((a, b) => a.query.rank - b.query.rank);
     let result;
     try {
-      result = pickForPost(entries, recentSet());
+      result = pickForPost(entries, recentSet(), postBrandsOf(pj));
       if (result.chosen) remember(result.chosen);
     } catch (e) {
       result = { image: null, image_error: 'pick photo failed: ' + plain(e && e.message ? e.message : String(e), 200), alternates: [], search_log: [] };
     }
-    // Paired with every search item of this post: they all trace back to the same post upstream.
-    const inputs = [...new Set(entries.flatMap(en => en.inputs))];
     out.push({
       json: {
         source: pj.source === undefined ? null : pj.source,
@@ -816,7 +982,7 @@ try {
         image_queries: Array.isArray(pj.image_queries) ? pj.image_queries : [],
         image: result.image, image_error: result.image_error, alternates: result.alternates, search_log: result.search_log,
       },
-      pairedItem: inputs.map(i => ({ item: i })),
+      pairedItem: inputsOf(p).map(i => ({ item: i })),
     });
   }
 } catch (e) {
@@ -829,7 +995,7 @@ try {
         watches: Array.isArray(pj.watches) ? pj.watches : [], image_queries: Array.isArray(pj.image_queries) ? pj.image_queries : [],
         image: null, image_error: 'pick photo failed: ' + plain(e && e.message ? e.message : String(e), 200), alternates: [], search_log: [],
       },
-      pairedItem: [],
+      pairedItem: inputsOf(p).map(i => ({ item: i })),
     });
   });
 }
