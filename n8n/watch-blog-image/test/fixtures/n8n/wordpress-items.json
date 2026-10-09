@@ -1,0 +1,239 @@
+{
+  "_about": "Item JSON (and binary metadata) that n8n 2.42.5 HTTP Request 4.2 nodes emitted in the step 4 probes (mock WordPress + mock-http /files), stack traces removed, otherwise verbatim. download_*: GET file_url with responseFormat file (outputPropertyName photo), no credential, onError continueRegularOutput (failure items lose the input json). upload_* / alt_*: predefinedCredentialType wordpressApi; default options give NodeApiError failure items (status only in cause.message); full_* use options.response.response {neverError: true, fullResponse: true}. upload_no_binary: binary upload on an item without binary (no request is made).",
+  "download_binary_meta": {
+    "mimeType": "image/jpeg",
+    "fileType": "image",
+    "fileExtension": "jpg",
+    "data": "filesystem-v2",
+    "directory": "http://127.0.0.1:18571/files/upload.wikimedia.org/a/ab/Rolex_Sub-1200x800.jpg",
+    "fileName": "Rolex_Sub-1200x800.jpg",
+    "id": "filesystem-v2:workflows/e2eWatchBlogImg1/executions/7/binary_data/f2b86f77-29aa-49c1-8efe-8aaf5993eeae",
+    "fileSize": "3.91 kB",
+    "bytes": 3911
+  },
+  "download_404": {
+    "error": {
+      "message": "404 - \"mock: only .jpg, .jpeg and .png files are generated\"",
+      "name": "AxiosError",
+      "code": "ERR_BAD_REQUEST",
+      "status": 404
+    }
+  },
+  "download_timeout": {
+    "error": {
+      "message": "timeout of 4000ms exceeded",
+      "name": "AxiosError",
+      "code": "ECONNABORTED"
+    }
+  },
+  "upload_201": {
+    "id": 901,
+    "date": "2026-10-09T10:00:00",
+    "slug": "rolex-submariner-116610ln",
+    "status": "inherit",
+    "type": "attachment",
+    "title": {
+      "raw": "rolex-submariner-116610ln",
+      "rendered": "rolex-submariner-116610ln"
+    },
+    "alt_text": "",
+    "caption": {
+      "raw": "",
+      "rendered": ""
+    },
+    "description": {
+      "raw": "",
+      "rendered": ""
+    },
+    "media_type": "image",
+    "mime_type": "image/jpeg",
+    "media_details": {
+      "width": 1200,
+      "height": 800,
+      "file": "2026/10/rolex-submariner-116610ln.jpg",
+      "filesize": 3911,
+      "sizes": {}
+    },
+    "post": null,
+    "source_url": "https://watchcentro.com/wp-content/uploads/2026/10/rolex-submariner-116610ln.jpg"
+  },
+  "upload_401": {
+    "error": {
+      "message": "Authorization failed - please check your credentials",
+      "timestamp": 1791542272971,
+      "name": "NodeApiError",
+      "description": "Sorry, you are not allowed to upload files as this user.",
+      "context": {},
+      "cause": {
+        "name": "AxiosError",
+        "message": "401 - \"{\\\"code\\\":\\\"rest_cannot_create\\\",\\\"message\\\":\\\"Sorry, you are not allowed to upload files as this user.\\\",\\\"data\\\":{\\\"status\\\":401}}\""
+      }
+    }
+  },
+  "upload_403": {
+    "error": {
+      "message": "Forbidden - perhaps check your credentials?",
+      "timestamp": 1791542272986,
+      "name": "NodeApiError",
+      "description": "Sorry, you are not allowed to upload files as this user.",
+      "context": {},
+      "cause": {
+        "name": "AxiosError",
+        "message": "403 - \"{\\\"code\\\":\\\"rest_cannot_create\\\",\\\"message\\\":\\\"Sorry, you are not allowed to upload files as this user.\\\",\\\"data\\\":{\\\"status\\\":403}}\""
+      }
+    }
+  },
+  "upload_413": {
+    "error": {
+      "message": "Your request is invalid or could not be processed by the service",
+      "timestamp": 1791542273002,
+      "name": "NodeApiError",
+      "description": "<html>\r\n<head><title>413 Request Entity Too Large</title></head>\r\n<body>\r\n<center><h1>413 Request Entity Too Large</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n",
+      "context": {},
+      "cause": {
+        "name": "AxiosError",
+        "message": "413 - \"<html>\\r\\n<head><title>413 Request Entity Too Large</title></head>\\r\\n<body>\\r\\n<center><h1>413 Request Entity Too Large</h1></center>\\r\\n<hr><center>nginx</center>\\r\\n</body>\\r\\n</html>\\r\\n\""
+      }
+    }
+  },
+  "upload_timeout": {
+    "error": {
+      "message": "The connection was aborted, perhaps the server is offline",
+      "timestamp": 1791542276010,
+      "name": "NodeApiError",
+      "context": {},
+      "cause": {
+        "name": "AxiosError",
+        "message": "timeout of 3000ms exceeded"
+      }
+    }
+  },
+  "upload_refused": {
+    "error": {
+      "message": "The service refused the connection - perhaps it is offline",
+      "timestamp": 1791542272858,
+      "name": "NodeApiError",
+      "context": {},
+      "cause": {
+        "name": "Error",
+        "message": "connect ECONNREFUSED 127.0.0.1:9"
+      }
+    }
+  },
+  "upload_no_binary": {
+    "error": "This operation expects the node's input data to contain a binary file 'photo', but none was found [item 0]"
+  },
+  "full_upload_201": {
+    "body": {
+      "id": 902,
+      "date": "2026-10-09T10:00:00",
+      "slug": "ok",
+      "status": "inherit",
+      "type": "attachment",
+      "title": {
+        "raw": "ok",
+        "rendered": "ok"
+      },
+      "alt_text": "",
+      "caption": {
+        "raw": "",
+        "rendered": ""
+      },
+      "description": {
+        "raw": "",
+        "rendered": ""
+      },
+      "media_type": "image",
+      "mime_type": "image/jpeg",
+      "media_details": {
+        "width": 1200,
+        "height": 800,
+        "file": "2026/10/ok.jpg",
+        "filesize": 2036,
+        "sizes": {}
+      },
+      "post": null,
+      "source_url": "https://watchcentro.com/wp-content/uploads/2026/10/ok.jpg"
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8",
+      "content-length": "441",
+      "date": "Fri, 09 Oct 2026 10:37:56 GMT",
+      "connection": "close"
+    },
+    "statusCode": 201,
+    "statusMessage": "Created"
+  },
+  "full_upload_401": {
+    "body": {
+      "code": "rest_cannot_create",
+      "message": "Sorry, you are not allowed to upload files as this user.",
+      "data": {
+        "status": 401
+      }
+    },
+    "headers": {
+      "content-type": "application/json; charset=UTF-8",
+      "content-length": "120",
+      "date": "Fri, 09 Oct 2026 10:37:56 GMT",
+      "connection": "close"
+    },
+    "statusCode": 401,
+    "statusMessage": "Unauthorized"
+  },
+  "full_upload_413": {
+    "data": "<html>\r\n<head><title>413 Request Entity Too Large</title></head>\r\n<body>\r\n<center><h1>413 Request Entity Too Large</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n",
+    "headers": {
+      "content-type": "text/html",
+      "content-length": "176",
+      "date": "Fri, 09 Oct 2026 10:37:56 GMT",
+      "connection": "close"
+    },
+    "statusCode": 413,
+    "statusMessage": "Payload Too Large"
+  },
+  "alt_200": {
+    "id": 901,
+    "date": "2026-10-09T10:00:00",
+    "slug": "rolex-submariner-116610ln",
+    "status": "inherit",
+    "type": "attachment",
+    "title": {
+      "raw": "Rolex Submariner 116610LN",
+      "rendered": "Rolex Submariner 116610LN"
+    },
+    "alt_text": "Rolex Submariner on a wrist",
+    "caption": {
+      "raw": "Photo: <a href=\"https://commons.wikimedia.org/wiki/File:X.jpg\">X</a> by Y, CC BY-SA 4.0, via Wikimedia Commons.",
+      "rendered": "<p>Photo: <a href=\"https://commons.wikimedia.org/wiki/File:X.jpg\">X</a> by Y, CC BY-SA 4.0, via Wikimedia Commons.</p>\n"
+    },
+    "description": {
+      "raw": "desc",
+      "rendered": "<p>desc</p>\n"
+    },
+    "media_type": "image",
+    "mime_type": "image/jpeg",
+    "media_details": {
+      "width": 1200,
+      "height": 800,
+      "file": "2026/10/rolex-submariner-116610ln.jpg",
+      "filesize": 3911,
+      "sizes": {}
+    },
+    "post": null,
+    "source_url": "https://watchcentro.com/wp-content/uploads/2026/10/rolex-submariner-116610ln.jpg"
+  },
+  "alt_500": {
+    "error": {
+      "message": "The service was not able to process your request",
+      "timestamp": 1791542380820,
+      "name": "NodeApiError",
+      "description": "<p>There has been a critical error on this website.</p>",
+      "context": {},
+      "cause": {
+        "name": "AxiosError",
+        "message": "500 - \"{\\\"code\\\":\\\"internal_server_error\\\",\\\"message\\\":\\\"<p>There has been a critical error on this website.</p>\\\",\\\"data\\\":{\\\"status\\\":500}}\""
+      }
+    }
+  }
+}

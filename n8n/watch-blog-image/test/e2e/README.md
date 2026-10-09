@@ -17,8 +17,10 @@ in the HTTP Request nodes before import.
 | `mock-http.mjs` | Shared core of the HTTP mocks: JSONL request log, fixtures map, response specs, generated images under `/files/`. |
 | `mock-openverse.mjs` | Mock of `api.openverse.org`: `GET /v1/images/`, `POST /v1/auth_tokens/token/` (client credentials), `POST /v1/auth_tokens/register/`, `GET /v1/rate_limit/`. Bodies and headers from `test/fixtures/openverse/`. |
 | `mock-commons.mjs` | Mock of `commons.wikimedia.org/w/api.php` (`action=query&generator=search&prop=imageinfo`), with the Wikimedia edge User-Agent policy. Bodies and headers from `test/fixtures/commons/`. |
+| `mock-wordpress.mjs` | Mock of the WordPress REST API at `https://watchcentro.com` (preferred port 18558): `POST /wp-json/wp/v2/media` from a raw body (Content-Type + `Content-Disposition: attachment; filename="x.jpg"`, optional hex Content-MD5) or multipart field `file`, `POST|PUT|PATCH /wp-json/wp/v2/media/<id>` (title, caption, description, alt_text), `POST /wp-json/wp/v2/posts` (featured_media handled like core: an unknown id is ignored, the post is still created), `GET /wp-json/wp/v2/users[/me]`, `GET /wp-content/uploads/...` (the stored bytes), `GET /__mock/state`, `POST /__mock/errors`, `POST /__mock/reset-state`. HTTP Basic application-password auth (`CREDENTIAL(url)` is the `LPEXDGdEBrfFA7NC` "WatchCentro" wordpressApi export), WordPress role caps, the core error bodies (`rest_upload_*`, `rest_cannot_create`, `incorrect_password`, `internal_server_error`), nginx HTML 413 (`maxBodyBytes`), and per-route error injection (`errors: {"media.create": {"sequence": [{"status": 413}, {"pass": true}]}}`). Every rule cites wordpress-develop trunk @ 8a5b626cfbd2 in the file header. Plug in with `mocks: {wordpress: {start: startWordpressMock, rewrite: REAL_BASE, port: PREFERRED_PORT}}` and `credentials: [CREDENTIAL('{{mock:wordpress}}')]`. Binary request bodies are logged as `{bytes, sha256, head_hex}`. |
 | `http-request.e2e.mjs` | HTTP Request 4.2 facts the step 3 nodes rely on (three runs): one item per input for 200/429/500/timeout/reset with `onError: continueRegularOutput`, the exact error item JSON, `neverError` + `fullResponse`, User-Agent, batching, `$('X').item` through error items, `$getWorkflowStaticData` persistence, OAuth2 client credentials (token on first use, refresh on 401), `retryOnFail`. Results saved as `$E2E_N8N_HOME/e2e/http-request-<case>.result.json`. |
 | `../unit/mocks.test.mjs` | Fast checks (no n8n) that the mocks answer like the real APIs; part of `npm test`. |
+| `../unit/mock-wordpress.test.mjs` | Same for `mock-wordpress.mjs`: the ported WordPress helpers (Content-Disposition parsing, sanitize_file_name, sanitize_text_field), upload/update/post flows, refusals in core order, error injection. |
 
 ## One-time setup (outside the repo)
 
@@ -187,3 +189,34 @@ plus the optional `delay_ms`, `stop_reason` and `headers`. `"__default__"` is us
   returned to the main process and saved after the execution in every mode except `manual` (editor
   runs). `n8n execute` runs in mode `cli`, so the harness can check persistence. `import:workflow`
   keeps the stored staticData when the file has none, and replaces it when the file has one.
+
+## HTTP Request 4.2 + wordpressApi facts (n8n 2.42.5 against `mock-wordpress.mjs`, scratch probe, not yet a committed e2e)
+
+- Response format File (`options.response.response = {responseFormat: 'file', outputPropertyName: 'data'}`)
+  keeps the INPUT item's json and adds `binary.data` (`mimeType` from the response Content-Type,
+  `fileName` from the URL, `bytes`). With `settings.binaryMode: 'separate'` the next HTTP node reads it with
+  `contentType: 'binaryData', inputDataFieldName: 'data'`, and `$binary.data.mimeType` works in header
+  expressions. The upload is sent with `content-length` (not chunked) and the exact bytes.
+- `authentication: 'predefinedCredentialType', nodeCredentialType: 'wordpressApi'` sends
+  `Authorization: Basic base64(username:password)` preemptively (credential `authenticate.auth`); the
+  credential's `url` field is NOT used by the HTTP Request node (the node URL is), so rewriting the node URL
+  is enough to reach a mock.
+- A failed request through a predefined credential becomes a `NodeApiError` item, NOT the AxiosError item of
+  plain requests: `{"error":{"message":"Authorization failed - please check your credentials","timestamp":...,
+  "name":"NodeApiError","description":"The provided password is an invalid application password.","context":{},
+  "cause":{"name":"AxiosError","message":"401 - \"{\\\"code\\\":\\\"incorrect_password\\\",...}\""}}}`.
+  There is no `status`/`code` key: the HTTP status is only the number before ` - ` in `error.cause.message`;
+  `description` is the WordPress `message` (or the whole HTML page for a 413 from nginx). Messages seen:
+  400 "Bad request - please check your parameters", 401 "Authorization failed - please check your credentials",
+  413 "Your request is invalid or could not be processed by the service", 500 "The service was not able to
+  process your request".
+- In HTTP Request parameter expressions, ANY reference to a node whose output item is such a NodeApiError
+  error item (`$('Upload').item...`, `.first()`, `.itemMatching(i)`, even `Object.keys(...json)`) throws an
+  opaque error (no name, no message). Unguarded it is swallowed: a query parameter is dropped, and a JSON
+  body becomes "The value in the \"JSON Body\" field is not valid JSON" (an error item, the request is not
+  sent). `$json` of that item and `$('E2E: input').item` still work, and Code nodes can read the error item
+  normally. So: never reference a possibly-failed upload node from a later HTTP node's expressions; read it
+  in a Code node (hand-back) and pass plain fields on.
+- A media-update URL built as `.../media/{{ $json.id }}` from an error item becomes `.../media/`, which is the
+  CREATE route: WordPress answers 400 `rest_upload_no_content_disposition` (nothing is created), but the
+  step must be skipped (IF / Code routing) when the upload failed rather than relying on that.

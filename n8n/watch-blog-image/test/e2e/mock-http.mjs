@@ -259,7 +259,7 @@ function loggedHeaders(headers) {
  * @param {{name: string, port?: number, host?: string, logFile?: string, quiet?: boolean,
  *          fixtures?: string|object, fixturesDir?: string, manifest?: object,
  *          handle: (ctx: object) => Promise<void>|void}} opts
- * `handle(ctx)` gets {req, res, url, pathname, query, body, rawBody, headers, entry, fixtures(),
+ * `handle(ctx)` gets {req, res, url, pathname, query, body, rawBody, rawBuffer, headers, entry, fixtures,
  *   respond(spec, {key, defaultSpec, statusDefaults}), log()} and must answer the request.
  * @returns {Promise<{name, url, port, requests: object[], close: () => Promise<void>}>}
  */
@@ -377,7 +377,8 @@ export function startHttpMock(opts) {
     const chunks = [];
     req.on('data', (c) => chunks.push(c));
     req.on('end', async () => {
-      const rawBody = Buffer.concat(chunks).toString('utf8');
+      const rawBuffer = Buffer.concat(chunks);
+      const rawBody = rawBuffer.toString('utf8');
       const url = new URL(req.url, `http://${host}`);
       const pathname = url.pathname;
       const query = queryObject(url.searchParams);
@@ -424,6 +425,7 @@ export function startHttpMock(opts) {
           query,
           headers,
           rawBody,
+          rawBuffer, // exact request bytes (binary uploads; rawBody is the utf8 decoding)
           body,
           entry,
           fixtures,
